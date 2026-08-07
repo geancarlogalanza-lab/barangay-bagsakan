@@ -26,7 +26,7 @@ function Verification() {
     } else {
       setHasAllocation(data && data.length > 0);
       if (!data || data.length === 0) {
-        setMessage('⚠️ No active allocation found. Please go to Matching page first.');
+        setMessage('No active allocation found. Please go to Matching page first.');
       }
     }
   }
@@ -50,12 +50,12 @@ function Verification() {
 
   async function verifyBeneficiary() {
     if (!qrInput.trim()) {
-      setMessage('⚠️ Please enter a QR code.');
+      setMessage('Please enter a QR code.');
       return;
     }
 
     if (!hasAllocation) {
-      setMessage('⚠️ No active allocation. Please confirm an allocation on the Matching page first.');
+      setMessage('No active allocation. Please confirm an allocation on the Matching page first.');
       return;
     }
 
@@ -71,14 +71,14 @@ function Verification() {
         .single();
 
       if (error) {
-        setMessage(`❌ Beneficiary not found. QR code "${qrInput.trim()}" does not exist.`);
+        setMessage(`Beneficiary not found. QR code "${qrInput.trim()}" does not exist.`);
         setBeneficiary(null);
         setLoading(false);
         return;
       }
 
       if (!data) {
-        setMessage('❌ No beneficiary found with this QR code.');
+        setMessage('No beneficiary found with this QR code.');
         setBeneficiary(null);
         setLoading(false);
         return;
@@ -97,7 +97,7 @@ function Verification() {
       }
 
       if (claims && claims.length > 0) {
-        setMessage(`⚠️ ${data.family_name} has already claimed food today.`);
+        setMessage(`${data.family_name} has already claimed food today.`);
         setBeneficiary({ ...data, alreadyClaimed: true });
         setLoading(false);
         return;
@@ -112,7 +112,7 @@ function Verification() {
         .limit(1);
 
       if (allocationError || !allocationData || allocationData.length === 0) {
-        setMessage('❌ No active allocation found for today.');
+        setMessage('No active allocation found for today.');
         setBeneficiary(null);
         setLoading(false);
         return;
@@ -128,11 +128,11 @@ function Verification() {
         portion: allocation.portion_per_family
       });
 
-      setMessage(`✅ ${data.family_name} is verified and eligible for ${allocation.portion_per_family} ${allocation.donations?.unit || 'kg'} of ${allocation.donations?.food_type || 'food'}.`);
+      setMessage(`${data.family_name} is verified and eligible for ${allocation.portion_per_family} ${allocation.donations?.unit || 'kg'} of ${allocation.donations?.food_type || 'food'}.`);
 
     } catch (error) {
       console.error('Error verifying:', error);
-      setMessage('❌ An error occurred during verification.');
+      setMessage('An error occurred during verification.');
     }
 
     setLoading(false);
@@ -154,164 +154,162 @@ function Verification() {
 
       if (error) {
         console.error('Error recording transaction:', error);
-        setMessage('❌ Failed to record transaction.');
+        setMessage('Failed to record transaction.');
         setLoading(false);
         return;
       }
 
-      setMessage(`✅ Food released to ${beneficiary.family_name}!`);
+      setMessage(`Food released to ${beneficiary.family_name}!`);
       setBeneficiary(null);
       setQrInput('');
       fetchRecentScans();
 
     } catch (error) {
       console.error('Error confirming release:', error);
-      setMessage('❌ An error occurred.');
+      setMessage('An error occurred.');
     }
 
     setLoading(false);
   }
 
   return (
-    <div>
-      <h2 style={{ marginBottom: '1.5rem' }}>Pickup Verification</h2>
+    <div style={{ padding: '0.5rem' }}>
+      <div className="verification-header">
+        <h2 className="verification-title">Pickup Verification</h2>
+        {hasAllocation && (
+          <span className="verification-active-badge">
+            Active Distribution
+          </span>
+        )}
+      </div>
 
-      <div style={{
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        maxWidth: '600px',
-        marginBottom: '2rem'
-      }}>
-        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-          Enter Beneficiary QR Code:
-        </label>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+      {/* Verification Box */}
+      <div className="verification-box">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <span style={{ fontSize: '2rem' }}>🎯</span>
+          <div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1a1a2e' }}>Verify Beneficiary</div>
+            <div style={{ fontSize: '0.85rem', color: '#888' }}>Enter the QR code from the beneficiary's card</div>
+          </div>
+        </div>
+
+        <div className="verification-input-group">
           <input
             type="text"
             value={qrInput}
             onChange={(e) => setQrInput(e.target.value)}
-            placeholder="e.g., BEN-001"
-            style={{
-              flex: 1,
-              padding: '10px',
-              border: '2px solid #ddd',
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
+            placeholder="Enter QR code (e.g., BEN-001)"
+            onKeyDown={(e) => e.key === 'Enter' && verifyBeneficiary()}
+            disabled={!hasAllocation}
           />
           <button
             onClick={verifyBeneficiary}
             disabled={loading || !hasAllocation}
+            className="btn-primary"
             style={{
-              backgroundColor: '#2d3b5e',
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '4px',
-              cursor: (loading || !hasAllocation) ? 'not-allowed' : 'pointer',
-              opacity: (loading || !hasAllocation) ? 0.6 : 1
+              whiteSpace: 'nowrap',
+              opacity: (loading || !hasAllocation) ? 0.6 : 1,
+              cursor: (loading || !hasAllocation) ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Verifying...' : 'SCAN'}
+            {loading ? 'Verifying...' : 'Scan'}
           </button>
         </div>
 
         {!hasAllocation && (
-          <div style={{
-            marginTop: '0.5rem',
-            color: '#f44336',
-            fontSize: '0.9rem'
-          }}>
-            ⚠️ No active allocation. Please go to Matching page and confirm an allocation first.
+          <div className="verification-warning">
+            No active allocation. Please go to Matching page and confirm an allocation first.
           </div>
         )}
 
         {message && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            backgroundColor: message.startsWith('✅') ? '#e8f5e9' : 
-                           message.startsWith('⚠️') ? '#fff3e0' : '#ffebee',
-            borderRadius: '8px',
-            color: message.startsWith('✅') ? '#2e7d32' : 
-                   message.startsWith('⚠️') ? '#e65100' : '#c62828'
-          }}>
+          <div className={`verification-message ${
+            message.includes('verified') || message.includes('released') ? 'success' : 
+            message.includes('already') ? 'warning' : 'error'
+          }`}>
             {message}
           </div>
         )}
 
         {beneficiary && !beneficiary.alreadyClaimed && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            backgroundColor: '#e8f5e9',
-            borderRadius: '8px'
-          }}>
-            <h4 style={{ margin: '0 0 0.5rem 0' }}>✓ Beneficiary Verified</h4>
-            <p style={{ margin: '0.25rem 0' }}><strong>Name:</strong> {beneficiary.family_name}</p>
-            <p style={{ margin: '0.25rem 0' }}><strong>Purok:</strong> {beneficiary.purok}</p>
-            <p style={{ margin: '0.25rem 0' }}>
-              <strong>Eligible for:</strong> {beneficiary.portion} {beneficiary.allocation?.donations?.unit || 'kg'} of {beneficiary.foodType}
-            </p>
+          <div className="verified-details">
+            <div className="verified-details-header">
+              <span>✅</span>
+              <span className="verified-details-title">Beneficiary Verified</span>
+            </div>
+            <div className="verified-row">
+              <span className="verified-label">Name</span>
+              <span className="verified-value">{beneficiary.family_name}</span>
+            </div>
+            <div className="verified-row">
+              <span className="verified-label">Purok</span>
+              <span className="verified-value">Purok {beneficiary.purok}</span>
+            </div>
+            <div className="verified-row">
+              <span className="verified-label">Eligible For</span>
+              <span className="verified-value-highlight">
+                {beneficiary.portion} {beneficiary.allocation?.donations?.unit || 'kg'} of {beneficiary.foodType}
+              </span>
+            </div>
             <button
               onClick={confirmRelease}
               disabled={loading}
-              style={{
-                backgroundColor: '#4caf50',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                marginTop: '0.5rem',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1
-              }}
+              className="btn-success"
+              style={{ width: '100%', marginTop: '0.5rem' }}
             >
-              {loading ? 'Processing...' : 'CONFIRM RELEASE'}
+              {loading ? 'Processing...' : 'Confirm Release'}
             </button>
           </div>
         )}
       </div>
 
-      <h3>Recent Transactions</h3>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          overflow: 'hidden',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <thead style={{ backgroundColor: '#2d3b5e', color: 'white' }}>
+      {/* Recent Transactions */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        marginTop: '2rem',
+        marginBottom: '1rem'
+      }}>
+        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#1a1a2e' }}>
+          Recent Transactions
+        </h3>
+        <span style={{ fontSize: '0.85rem', color: '#888' }}>
+          {recentScans.length} records
+        </span>
+      </div>
+
+      <div className="table-container">
+        <table>
+          <thead>
             <tr>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Family</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Time</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
+              <th>Family</th>
+              <th>Time</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
             {recentScans.length === 0 ? (
               <tr>
-                <td colSpan="3" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
-                  No transactions yet. Scan a beneficiary and release food to see records here.
+                <td colSpan="3" style={{ padding: '2.5rem', textAlign: 'center', color: '#999' }}>
+                  No transactions yet.
                 </td>
               </tr>
             ) : (
               recentScans.map((scan) => (
-                <tr key={scan.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '12px' }}>
-                    {scan.beneficiaries?.family_name || 'Unknown'}
+                <tr key={scan.id}>
+                  <td>
+                    <span style={{ fontWeight: '500' }}>
+                      {scan.beneficiaries?.family_name || 'Unknown'}
+                    </span>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    {new Date(scan.claimed_at).toLocaleString()}
+                  <td>
+                    <span style={{ color: '#666' }}>
+                      {new Date(scan.claimed_at).toLocaleString()}
+                    </span>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{
-                      color: scan.status === 'claimed' ? '#4caf50' : '#f44336'
-                    }}>
+                  <td>
+                    <span className={`badge ${scan.status === 'claimed' ? 'badge-available' : 'badge-expired'}`}>
                       {scan.status}
                     </span>
                   </td>

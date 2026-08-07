@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase';
 function Beneficiaries() {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(null);
 
   useEffect(() => {
     fetchBeneficiaries();
@@ -25,105 +26,167 @@ function Beneficiaries() {
   }
 
   async function generateQRCode(id) {
+    setGenerating(id);
+    
+    // Find the beneficiary
+    const beneficiary = beneficiaries.find(b => b.id === id);
+    if (!beneficiary) {
+      console.error('Beneficiary not found');
+      setGenerating(null);
+      return;
+    }
+
+    // If QR code doesn't exist, generate one
+    let qrCode = beneficiary.qr_code;
+    if (!qrCode) {
+      // Generate a unique QR code (using the ID as base)
+      qrCode = `BEN-${String(id).slice(0, 8).toUpperCase()}`;
+    }
+
+    // Update the database with QR code and printed status
     const { error } = await supabase
       .from('beneficiaries')
-      .update({ qr_printed: true })
+      .update({ 
+        qr_code: qrCode,
+        qr_printed: true 
+      })
       .eq('id', id);
 
     if (error) {
       console.error('Error updating QR status:', error);
     } else {
-      fetchBeneficiaries();
+      // Refresh the list
+      await fetchBeneficiaries();
     }
+    setGenerating(null);
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '300px',
+        fontSize: '1.2rem',
+        color: '#666'
+      }}>
+        Loading beneficiaries...
+      </div>
+    );
   }
 
-  return (
-    <div>
-      <h2 style={{ marginBottom: '0.5rem' }}>Beneficiary Management</h2>
-      <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-        Total: {beneficiaries.length} families | 
-        With QR: {beneficiaries.filter(b => b.qr_printed).length} | 
-        Need QR: {beneficiaries.filter(b => !b.qr_printed).length}
-      </p>
+  const withQR = beneficiaries.filter(b => b.qr_printed).length;
+  const needQR = beneficiaries.filter(b => !b.qr_printed).length;
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          overflow: 'hidden',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+  return (
+    <div style={{ padding: '0.5rem' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        marginBottom: '1.5rem'
+      }}>
+        <h2 style={{ 
+          margin: 0, 
+          fontSize: '1.8rem',
+          color: '#1a1a2e'
         }}>
-          <thead style={{ backgroundColor: '#2d3b5e', color: 'white' }}>
+          Beneficiary Management
+        </h2>
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          flexWrap: 'wrap'
+        }}>
+          <span className="stat-badge" style={{ background: '#2d3b5e', color: 'white' }}>
+            Total: {beneficiaries.length}
+          </span>
+          <span className="stat-badge" style={{ background: '#4caf50', color: 'white' }}>
+            With QR: {withQR}
+          </span>
+          <span className="stat-badge" style={{ background: '#ff9800', color: 'white' }}>
+            Need QR: {needQR}
+          </span>
+        </div>
+      </div>
+
+      <div className="table-container">
+        <table>
+          <thead>
             <tr>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Family Name</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Purok</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Priority</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>QR Code</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Action</th>
+              <th>Status</th>
+              <th>Family Name</th>
+              <th>Purok</th>
+              <th>Priority</th>
+              <th>QR Code</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {beneficiaries.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>
-                  No beneficiaries registered.
+                <td colSpan="6" style={{ padding: '2.5rem', textAlign: 'center', color: '#999' }}>
+                  No beneficiaries registered yet.
                 </td>
               </tr>
             ) : (
               beneficiaries.map((beneficiary) => (
-                <tr key={beneficiary.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '12px' }}>
-                    {beneficiary.qr_printed ? '✅' : '❌'}
+                <tr key={beneficiary.id}>
+                  <td>
+                    {beneficiary.qr_printed ? '✅' : '⏳'}
                   </td>
-                  <td style={{ padding: '12px' }}>{beneficiary.family_name}</td>
-                  <td style={{ padding: '12px' }}>Purok {beneficiary.purok}</td>
-                  <td style={{ padding: '12px' }}>
-                    <span style={{
-                      backgroundColor: beneficiary.priority === 'high' ? '#f44336' :
-                                     beneficiary.priority === 'medium' ? '#ff9800' : '#4caf50',
-                      color: 'white',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '0.8rem'
-                    }}>
+                  <td>
+                    <span style={{ fontWeight: '500' }}>
+                      {beneficiary.family_name}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="purok-badge">
+                      {beneficiary.purok}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`badge badge-${beneficiary.priority}`}>
                       {beneficiary.priority}
                     </span>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    {beneficiary.qr_printed ? (
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${beneficiary.qr_code}`}
-                        alt="QR Code" 
-                        style={{ width: '50px', height: '50px' }}
-                      />
+                  <td>
+                    {beneficiary.qr_printed && beneficiary.qr_code ? (
+                      <div className="qr-container">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${beneficiary.qr_code}`}
+                          alt={`QR Code for ${beneficiary.family_name}`}
+                          style={{ width: '60px', height: '60px' }}
+                        />
+                      </div>
                     ) : (
-                      <span style={{ color: '#999' }}>Not generated</span>
+                      <span style={{ color: '#999', fontSize: '0.85rem' }}>
+                        Not generated
+                      </span>
                     )}
                   </td>
-                  <td style={{ padding: '12px' }}>
+                  <td>
                     {!beneficiary.qr_printed ? (
                       <button
                         onClick={() => generateQRCode(beneficiary.id)}
-                        style={{
-                          backgroundColor: '#2d3b5e',
-                          color: 'white',
-                          border: 'none',
-                          padding: '6px 12px',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
+                        disabled={generating === beneficiary.id}
+                        className="btn-primary"
+                        style={{ 
+                          padding: '8px 16px', 
+                          fontSize: '0.8rem',
+                          opacity: generating === beneficiary.id ? 0.7 : 1,
+                          cursor: generating === beneficiary.id ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        Generate QR
+                        {generating === beneficiary.id ? 'Generating...' : 'Generate QR'}
                       </button>
                     ) : (
-                      <span style={{ color: '#4caf50' }}>✓ Done</span>
+                      <span className="done-badge">
+                        Done
+                      </span>
                     )}
                   </td>
                 </tr>
