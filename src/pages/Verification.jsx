@@ -25,9 +25,6 @@ function Verification() {
       console.error('Error checking allocation:', error);
     } else {
       setHasAllocation(data && data.length > 0);
-      if (!data || data.length === 0) {
-        setMessage('No active allocation found. Please go to Matching page first.');
-      }
     }
   }
 
@@ -55,7 +52,7 @@ function Verification() {
     }
 
     if (!hasAllocation) {
-      setMessage('No active allocation. Please confirm an allocation on the Matching page first.');
+      setMessage('No active allocation. Please go to Matching page and confirm an allocation first.');
       return;
     }
 
@@ -174,12 +171,15 @@ function Verification() {
 
   return (
     <div style={{ padding: '0.5rem' }}>
-      <div className="verification-header">
-        <h2 className="verification-title">Pickup Verification</h2>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            <span className="icon">✅</span> Pickup Verification
+          </h1>
+          <p className="page-subtitle">Scan beneficiary QR codes to release food</p>
+        </div>
         {hasAllocation && (
-          <span className="verification-active-badge">
-            Active Distribution
-          </span>
+          <span className="badge badge-available">Active Distribution</span>
         )}
       </div>
 
@@ -218,7 +218,7 @@ function Verification() {
 
         {!hasAllocation && (
           <div className="verification-warning">
-            No active allocation. Please go to Matching page and confirm an allocation first.
+            ⚠️ No active allocation. Please go to Matching page and confirm an allocation first.
           </div>
         )}
 

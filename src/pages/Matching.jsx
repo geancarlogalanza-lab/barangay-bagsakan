@@ -166,17 +166,17 @@ function Matching() {
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card green">
-          <div className="stat-icon">📦</div>
+          <div className="stat-icon"></div>
           <h3 className="number">{totalFood} kg</h3>
           <p className="label">Available Food</p>
         </div>
         <div className="stat-card blue">
-          <div className="stat-icon">👨‍👩‍👧‍👦</div>
+          <div className="stat-icon"></div>
           <h3 className="number">{familiesCount}</h3>
           <p className="label">Registered Families</p>
         </div>
         <div className="stat-card orange">
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon"></div>
           <h3 className="number">
             {familiesCount > 0 && totalFood > 0 
               ? (totalFood / familiesCount).toFixed(2) 
@@ -235,7 +235,7 @@ function Matching() {
                       fontWeight: item.expiry_hours <= 4 ? '600' : '400'
                     }}>
                       {item.expiry_hours} hours
-                      {item.expiry_hours <= 4 && ' ⚠️'}
+                      {item.expiry_hours <= 4}
                     </span>
                   </td>
                 </tr>

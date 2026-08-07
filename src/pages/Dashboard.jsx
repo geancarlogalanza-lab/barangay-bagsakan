@@ -9,37 +9,10 @@ function Dashboard() {
     totalRemaining: 0
   });
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [donors, setDonors] = useState([]);
-  
-  // Form state
-  const [foodType, setFoodType] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [unit, setUnit] = useState('kg');
-  const [expiryHours, setExpiryHours] = useState('');
-  const [donorId, setDonorId] = useState('');
-  const [formLoading, setFormLoading] = useState(false);
-  const [formMessage, setFormMessage] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
-    fetchDonors();
   }, []);
-
-  async function fetchDonors() {
-    const { data, error } = await supabase
-      .from('donors')
-      .select('id, name');
-    
-    if (error) {
-      console.error('Error fetching donors:', error);
-    } else {
-      setDonors(data || []);
-      if (data && data.length > 0) {
-        setDonorId(data[0].id);
-      }
-    }
-  }
 
   async function fetchDashboardData() {
     setLoading(true);
@@ -71,52 +44,6 @@ function Dashboard() {
     setLoading(false);
   }
 
-  async function handleAddDonation(e) {
-    e.preventDefault();
-    
-    if (!foodType || !quantity || !expiryHours || !donorId) {
-      setFormMessage('Please fill in all fields.');
-      return;
-    }
-
-    setFormLoading(true);
-    setFormMessage('');
-
-    try {
-      const { error } = await supabase
-        .from('donations')
-        .insert({
-          donor_id: donorId,
-          food_type: foodType,
-          quantity: parseFloat(quantity),
-          unit: unit,
-          expiry_hours: parseInt(expiryHours),
-          status: 'available'
-        });
-
-      if (error) {
-        console.error('Error adding donation:', error);
-        setFormMessage('Failed to add donation: ' + error.message);
-      } else {
-        setFormMessage('Donation added successfully!');
-        setFoodType('');
-        setQuantity('');
-        setExpiryHours('');
-        setUnit('kg');
-        setTimeout(() => {
-          setShowAddForm(false);
-          setFormMessage('');
-          fetchDashboardData();
-        }, 1500);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setFormMessage('An error occurred.');
-    }
-
-    setFormLoading(false);
-  }
-
   if (loading) {
     return (
       <div style={{ 
@@ -134,229 +61,156 @@ function Dashboard() {
 
   return (
     <div style={{ padding: '0.5rem' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '1.5rem'
+      {/* Hero Section with Gradient Background */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '20px',
+        padding: '3rem 2.5rem',
+        marginBottom: '2rem',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 10px 40px rgba(102, 126, 234, 0.4)'
       }}>
-        <h2 style={{ 
-          margin: 0, 
-          fontSize: '1.8rem',
-          color: '#1a1a2e'
-        }}>
-          Dashboard
-        </h2>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-primary"
-        >
-          {showAddForm ? 'Cancel' : '+ Add Donation'}
-        </button>
+        {/* Decorative background circles */}
+        <div style={{
+          position: 'absolute',
+          top: '-100px',
+          right: '-50px',
+          width: '300px',
+          height: '300px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.05)',
+          pointerEvents: 'none'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-80px',
+          left: '-30px',
+          width: '200px',
+          height: '200px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.04)',
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            marginBottom: '0.5rem'
+          }}>
+            <span style={{
+              fontSize: '3rem',
+              lineHeight: 1
+            }}></span>
+            <span style={{
+              background: 'rgba(255,255,255,0.2)',
+              padding: '4px 16px',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase'
+            }}>
+              Community Food Rescue
+            </span>
+          </div>
+          <h1 style={{
+            fontSize: '2.5rem',
+            fontWeight: '700',
+            margin: '0.5rem 0 0.25rem 0',
+            letterSpacing: '-0.5px',
+            lineHeight: 1.1
+          }}>
+            Barangay Bagsakan
+          </h1>
+          <p style={{
+            fontSize: '1.1rem',
+            opacity: 0.9,
+            marginTop: '0.25rem',
+            maxWidth: '550px',
+            lineHeight: 1.5
+          }}>
+            A food surplus redistribution system connecting donors to families in need.
+            <br />
+            <span style={{ opacity: 0.7, fontSize: '0.95rem' }}>
+              Every donation counts. Every family matters.
+            </span>
+          </p>
+          <div style={{
+            display: 'flex',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            marginTop: '1.5rem'
+          }}>
+            <div style={{
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              padding: '0.6rem 1.5rem',
+              borderRadius: '30px',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <span style={{ fontSize: '1.1rem' }}></span>
+              {donations.length} Donations
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              padding: '0.6rem 1.5rem',
+              borderRadius: '30px',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <span style={{ fontSize: '1.1rem' }}></span>
+              {stats.totalDonated} kg Rescued
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              padding: '0.6rem 1.5rem',
+              borderRadius: '30px',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <span style={{ fontSize: '1.1rem' }}></span>
+              {new Set(donations.map(d => d.donor_id)).size} Donors
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Add Donation Form */}
-      {showAddForm && (
-        <div style={{
-          background: 'white',
-          padding: '1.5rem',
-          borderRadius: '16px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-          marginBottom: '1.5rem',
-          border: '1px solid rgba(0,0,0,0.04)'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#1a1a2e' }}>
-            Add New Donation
-          </h3>
-          <form onSubmit={handleAddDonation}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '1rem'
-            }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                  Food Type *
-                </label>
-                <input
-                  type="text"
-                  value={foodType}
-                  onChange={(e) => setFoodType(e.target.value)}
-                  placeholder="e.g., Tomatoes"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    fontSize: '1rem'
-                  }}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                  Quantity *
-                </label>
-                <input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="e.g., 10"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    fontSize: '1rem'
-                  }}
-                  required
-                  step="0.1"
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                  Unit
-                </label>
-                <select
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    background: 'white'
-                  }}
-                >
-                  <option value="kg">kg</option>
-                  <option value="pcs">pcs</option>
-                  <option value="packs">packs</option>
-                  <option value="grams">grams</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                  Expires In (hours) *
-                </label>
-                <input
-                  type="number"
-                  value={expiryHours}
-                  onChange={(e) => setExpiryHours(e.target.value)}
-                  placeholder="e.g., 24"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    fontSize: '1rem'
-                  }}
-                  required
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', color: '#666', marginBottom: '0.25rem' }}>
-                  Donor *
-                </label>
-                <select
-                  value={donorId}
-                  onChange={(e) => setDonorId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    background: 'white'
-                  }}
-                  required
-                >
-                  {donors.length === 0 ? (
-                    <option value="">No donors available</option>
-                  ) : (
-                    donors.map((donor) => (
-                      <option key={donor.id} value={donor.id}>
-                        {donor.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-            </div>
-            {formMessage && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                borderRadius: '8px',
-                backgroundColor: formMessage.includes('success') ? '#e8f5e9' : '#ffebee',
-                color: formMessage.includes('success') ? '#2e7d32' : '#c62828'
-              }}>
-                {formMessage}
-              </div>
-            )}
-            <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem' }}>
-              <button
-                type="submit"
-                disabled={formLoading || donors.length === 0}
-                className="btn-primary"
-                style={{
-                  opacity: (formLoading || donors.length === 0) ? 0.6 : 1,
-                  cursor: (formLoading || donors.length === 0) ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {formLoading ? 'Adding...' : 'Add Donation'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setFormMessage('');
-                }}
-                style={{
-                  background: 'transparent',
-                  color: '#666',
-                  border: '2px solid #ddd',
-                  padding: '12px 28px',
-                  borderRadius: '10px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#999';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.borderColor = '#ddd';
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-      
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card green">
-          <div className="stat-icon">📦</div>
+          <span className="stat-icon"></span>
           <h3 className="number">{stats.totalDonated} kg</h3>
           <p className="label">Total Donated</p>
         </div>
         <div className="stat-card orange">
-          <div className="stat-icon">✅</div>
+          <span className="stat-icon"></span>
           <h3 className="number">{stats.totalClaimed} kg</h3>
           <p className="label">Total Claimed</p>
         </div>
         <div className="stat-card blue">
-          <div className="stat-icon">📋</div>
+          <span className="stat-icon"></span>
           <h3 className="number">{stats.totalRemaining} kg</h3>
           <p className="label">Still Available</p>
         </div>
       </div>
 
-      {/* Donations Table */}
+      {/* Recent Donations */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -388,10 +242,12 @@ function Dashboard() {
                 <td colSpan="5" style={{ padding: '2.5rem', textAlign: 'center', color: '#999' }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🍽️</div>
                   No donations available yet.
+                  <br />
+                  <span style={{ fontSize: '0.85rem', color: '#bbb' }}>Check back later.</span>
                 </td>
               </tr>
             ) : (
-              donations.map((donation) => (
+              donations.slice(0, 10).map((donation) => (
                 <tr key={donation.id}>
                   <td>
                     <span style={{ fontWeight: '500' }}>{donation.food_type}</span>
@@ -409,7 +265,7 @@ function Dashboard() {
                       fontWeight: donation.expiry_hours <= 4 ? '600' : '400'
                     }}>
                       {donation.expiry_hours}h
-                      {donation.expiry_hours <= 4 && ' ⚠️'}
+                      {donation.expiry_hours <= 4}
                     </span>
                   </td>
                   <td>
@@ -422,6 +278,40 @@ function Dashboard() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Footer Stats */}
+      <div style={{
+        marginTop: '1.5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem',
+        padding: '1.25rem',
+        background: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
+        border: '1px solid rgba(0,0,0,0.04)'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#888' }}>Active Donors</span>
+          <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#1a1a2e' }}>
+            {new Set(donations.map(d => d.donor_id)).size}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#888' }}>Total Donations</span>
+          <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#1a1a2e' }}>
+            {donations.length}
+          </div>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#888' }}>Avg. Expiry</span>
+          <div style={{ fontSize: '1.3rem', fontWeight: '600', color: '#1a1a2e' }}>
+            {donations.length > 0 
+              ? Math.round(donations.reduce((sum, d) => sum + d.expiry_hours, 0) / donations.length) + 'h'
+              : 'N/A'}
+          </div>
+        </div>
       </div>
     </div>
   );

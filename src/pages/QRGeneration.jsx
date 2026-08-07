@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
+import { Link } from 'react-router-dom';
 
 function QRGeneration() {
   const [allocation, setAllocation] = useState(null);
@@ -73,24 +74,16 @@ function QRGeneration() {
         <p style={{ color: '#666', marginBottom: '1.5rem' }}>
           No confirmed allocation found. Please go to Matching & Allocation to confirm an allocation first.
         </p>
-        <a 
-          href="/matching" 
-          style={{
-            background: 'linear-gradient(135deg, #2d3b5e 0%, #1a1a2e 100%)',
-            color: 'white',
-            border: 'none',
-            padding: '12px 28px',
-            borderRadius: '10px',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
+        <Link 
+          to="/matching" 
+          className="btn-primary"
+          style={{ 
             textDecoration: 'none',
             display: 'inline-block'
           }}
         >
           Go to Matching
-        </a>
+        </Link>
       </div>
     );
   }
@@ -105,84 +98,31 @@ function QRGeneration() {
 
   return (
     <div style={{ padding: '0.5rem' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        <h2 style={{ 
-          margin: 0, 
-          fontSize: '1.8rem',
-          color: '#1a1a2e'
-        }}>
-          QR Generation
-        </h2>
-        <span style={{
-          background: '#e8f5e9',
-          color: '#2e7d32',
-          padding: '6px 16px',
-          borderRadius: '20px',
-          fontSize: '0.8rem',
-          fontWeight: '600'
-        }}>
-          Allocation Confirmed
-        </span>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            <span className="icon">📱</span> QR Generation
+          </h1>
+          <p className="page-subtitle">Scan this QR code at the pickup point</p>
+        </div>
+        <span className="badge badge-available">✅ Allocation Confirmed</span>
       </div>
 
-      {/* Info Banner */}
-      <div style={{
-        background: '#e8f5e9',
-        border: '1px solid #a5d6a7',
-        borderRadius: '12px',
-        padding: '1rem 1.5rem',
-        marginBottom: '1.5rem'
-      }}>
-        <div style={{ fontWeight: '600', color: '#1e3a2f' }}>
-          Distribution Ready
-        </div>
-        <div style={{ fontSize: '0.85rem', color: '#2e7d32' }}>
-          QR code generated for today's food distribution
-        </div>
-      </div>
-
-      {/* Two Column Layout */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '2rem'
       }}>
         {/* QR Code Column */}
-        <div style={{
-          background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
-          border: '1px solid rgba(0, 0, 0, 0.04)',
-          padding: '2rem',
-          textAlign: 'center',
-          transition: 'all 0.3s ease'
-        }}>
+        <div className="qr-card">
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#1a1a2e' }}>
             Distribution QR Code
           </h3>
-          <div style={{ 
-            display: 'inline-block', 
-            padding: '1rem', 
-            background: 'white',
-            border: '2px solid #2d3b5e',
-            borderRadius: '12px',
-            transition: 'all 0.3s ease'
-          }}>
+          <div className="qr-code-wrapper">
             <img 
               src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`}
               alt="Distribution QR Code" 
-              style={{ 
-                width: '180px', 
-                height: '180px',
-                display: 'block'
-              }}
+              className="qr-code-image"
             />
           </div>
           <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.75rem' }}>
@@ -190,28 +130,10 @@ function QRGeneration() {
           </p>
           <button 
             onClick={() => window.print()}
-            style={{
-              background: 'transparent',
-              color: '#2d3b5e',
-              border: '2px solid #2d3b5e',
-              padding: '8px 20px',
-              borderRadius: '10px',
-              fontSize: '0.85rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              marginTop: '0.5rem'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#2d3b5e';
-              e.target.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'transparent';
-              e.target.style.color = '#2d3b5e';
-            }}
+            className="btn-secondary"
+            style={{ marginTop: '0.5rem' }}
           >
-            Print QR Code
+            🖨️ Print QR Code
           </button>
         </div>
 

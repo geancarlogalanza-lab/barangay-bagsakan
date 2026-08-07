@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Beneficiaries from './pages/Beneficiaries';
 import Matching from './pages/Matching';
@@ -8,18 +9,51 @@ import Verification from './pages/Verification';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Navbar />
-      <div style={{ padding: '2rem' }}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/beneficiaries" element={<Beneficiaries />} />
-          <Route path="/matching" element={<Matching />} />
-          <Route path="/qr" element={<QRGeneration />} />
-          <Route path="/verify" element={<Verification />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/dashboard" element={
+          <>
+            <Navbar />
+            <div className="app-container">
+              <Dashboard />
+            </div>
+          </>
+        } />
+        <Route path="/beneficiaries" element={
+          <>
+            <Navbar />
+            <div className="app-container">
+              <Beneficiaries />
+            </div>
+          </>
+        } />
+        <Route path="/matching" element={
+          <>
+            <Navbar />
+            <div className="app-container">
+              <Matching />
+            </div>
+          </>
+        } />
+        <Route path="/qr" element={
+          <>
+            <Navbar />
+            <div className="app-container">
+              <QRGeneration />
+            </div>
+          </>
+        } />
+        <Route path="/verify" element={
+          <>
+            <Navbar />
+            <div className="app-container">
+              <Verification />
+            </div>
+          </>
+        } />
+      </Routes>
+    </HashRouter>
   );
 }
 
