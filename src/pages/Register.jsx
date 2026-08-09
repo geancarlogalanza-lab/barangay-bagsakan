@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authcontext';
+import { supabase } from '../services/supabase';
 
 function Register() {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ function Register() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    
+
     if (!email || !password) {
       setError('Please fill in all fields.');
       return;
@@ -36,10 +37,34 @@ function Register() {
     
     if (error) {
       setError(error.message);
-    } else {
-      navigate('/login');
+      setLoading(false);
+      return;
+    }
+
+    // If signup was successful, create donor record
+    if (data?.user) {
+      try {
+        const { error: donorError } = await supabase
+          .from('donors')
+          .insert({
+            id: data.user.id,
+            name: email.split('@')[0] || 'Donor',
+            email: email,
+            address: 'Barangay Pasig'
+          });
+
+        if (donorError) {
+          console.error('Error creating donor:', donorError);
+          // Don't show error to user, they can still login
+        } else {
+          console.log('✅ Donor profile created for:', email);
+        }
+      } catch (err) {
+        console.error('Error in donor creation:', err);
+      }
     }
     
+    navigate('/login');
     setLoading(false);
   }
 

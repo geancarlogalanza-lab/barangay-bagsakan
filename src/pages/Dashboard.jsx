@@ -11,6 +11,7 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isDonorReady, setIsDonorReady] = useState(false);
   const { user, role } = useAuth();
   
   // Form state
@@ -22,11 +23,17 @@ function Dashboard() {
   const [formMessage, setFormMessage] = useState('');
 
   useEffect(() => {
-    fetchDashboardData();
-    ensureDonorExists();
-  }, []);
+    if (user) {
+      setupDonorAndFetch();
+    }
+  }, [user]);
 
-  // This function creates a donor record for the user if they don't have one
+  async function setupDonorAndFetch() {
+    await ensureDonorExists();
+    await fetchDashboardData();
+  }
+
+  // This function creates a donor record for ANY user if they don't have one
   async function ensureDonorExists() {
     if (!user) return;
 
@@ -43,7 +50,7 @@ function Dashboard() {
       }
 
       if (!existingDonor) {
-        // Create donor record
+        // Create donor record for ANY user
         const { error: createError } = await supabase
           .from('donors')
           .insert({
@@ -59,8 +66,12 @@ function Dashboard() {
           console.log('✅ Donor profile created for:', user.email);
         }
       }
+      
+      setIsDonorReady(true);
     } catch (error) {
       console.error('Error in ensureDonorExists:', error);
+      // Even if there's an error, try to proceed
+      setIsDonorReady(true);
     }
   }
 
@@ -102,18 +113,35 @@ function Dashboard() {
       return;
     }
 
+    if (!user) {
+      setFormMessage('You need to be logged in to donate.');
+      return;
+    }
+
     setFormLoading(true);
     setFormMessage('');
 
     try {
-      // Make sure donor exists
-      if (!user) {
-        setFormMessage('You need to be logged in to donate.');
-        setFormLoading(false);
-        return;
+      // Make sure donor exists before adding donation
+      const { data: donorCheck, error: donorError } = await supabase
+        .from('donors')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (donorError || !donorCheck) {
+        // If donor doesn't exist, create them
+        await supabase
+          .from('donors')
+          .insert({
+            id: user.id,
+            name: user.email?.split('@')[0] || 'Donor',
+            email: user.email,
+            address: 'Barangay Pasig'
+          });
       }
 
-      // Insert donation using user.id as donor_id
+      // Insert donation
       const { error } = await supabase
         .from('donations')
         .insert({
