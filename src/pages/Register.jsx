@@ -2,25 +2,42 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authcontext';
 
-function Login() {
+function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
+    
+    if (!email || !password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
-    const { error } = await signIn(email, password);
+    const { data, error } = await signUp(email, password);
     
     if (error) {
       setError(error.message);
     } else {
-      navigate('/dashboard');
+      navigate('/login');
     }
     
     setLoading(false);
@@ -44,10 +61,10 @@ function Login() {
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
       }}>
         <h2 style={{ textAlign: 'center', marginBottom: '0.25rem', color: '#1a1a2e' }}>
-          🍽️ Barangay Bagsakan
+          🍽️ Create Account
         </h2>
         <p style={{ textAlign: 'center', color: '#666', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-          Sign in to continue
+          Register as a donor
         </p>
 
         {error && (
@@ -86,7 +103,7 @@ function Login() {
               onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
             />
           </div>
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500', fontSize: '0.9rem' }}>
               Password
             </label>
@@ -94,7 +111,29 @@ function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Min 6 characters"
+              required
+              style={{
+                width: '100%',
+                padding: '10px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                transition: 'border-color 0.3s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#2d3b5e'}
+              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+            />
+          </div>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500', fontSize: '0.9rem' }}>
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
               required
               style={{
                 width: '100%',
@@ -135,16 +174,16 @@ function Login() {
               e.target.style.boxShadow = 'none';
             }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
         <p style={{ textAlign: 'center', fontSize: '0.9rem', color: '#666', marginTop: '1rem' }}>
-          Don't have an account? <Link to="/register" style={{ color: '#2d3b5e', fontWeight: '600', textDecoration: 'none' }}>Register</Link>
+          Already have an account? <Link to="/login" style={{ color: '#2d3b5e', fontWeight: '600', textDecoration: 'none' }}>Sign In</Link>
         </p>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default Register;

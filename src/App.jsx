@@ -1,9 +1,10 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/authcontext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Beneficiaries from './pages/Beneficiaries';
 import Matching from './pages/Matching';
@@ -17,12 +18,15 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           <Route path="/dashboard" element={
             <ProtectedRoute allowedRoles={['admin', 'donor', 'volunteer']}>
               <>
                 <Navbar />
-                <div className="app-container"><Dashboard /></div>
+                <div className="app-container">
+                  <Dashboard />
+                </div>
               </>
             </ProtectedRoute>
           } />
@@ -31,7 +35,9 @@ function App() {
             <ProtectedRoute allowedRoles={['admin']}>
               <>
                 <Navbar />
-                <div className="app-container"><Beneficiaries /></div>
+                <div className="app-container">
+                  <Beneficiaries />
+                </div>
               </>
             </ProtectedRoute>
           } />
@@ -40,7 +46,9 @@ function App() {
             <ProtectedRoute allowedRoles={['admin']}>
               <>
                 <Navbar />
-                <div className="app-container"><Matching /></div>
+                <div className="app-container">
+                  <Matching />
+                </div>
               </>
             </ProtectedRoute>
           } />
@@ -49,7 +57,9 @@ function App() {
             <ProtectedRoute allowedRoles={['admin']}>
               <>
                 <Navbar />
-                <div className="app-container"><QRGeneration /></div>
+                <div className="app-container">
+                  <QRGeneration />
+                </div>
               </>
             </ProtectedRoute>
           } />
@@ -58,7 +68,9 @@ function App() {
             <ProtectedRoute allowedRoles={['admin', 'volunteer']}>
               <>
                 <Navbar />
-                <div className="app-container"><Verification /></div>
+                <div className="app-container">
+                  <Verification />
+                </div>
               </>
             </ProtectedRoute>
           } />
