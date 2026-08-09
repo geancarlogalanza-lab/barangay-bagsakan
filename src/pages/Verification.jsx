@@ -174,7 +174,7 @@ function Verification() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <span className="icon">✅</span> Pickup Verification
+            <span className="icon"></span> Pickup Verification
           </h1>
           <p className="page-subtitle">Scan beneficiary QR codes to release food</p>
         </div>
@@ -186,7 +186,7 @@ function Verification() {
       {/* Verification Box */}
       <div className="verification-box">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '2rem' }}>🎯</span>
+          <span style={{ fontSize: '2rem' }}></span>
           <div>
             <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1a1a2e' }}>Verify Beneficiary</div>
             <div style={{ fontSize: '0.85rem', color: '#888' }}>Enter the QR code from the beneficiary's card</div>
@@ -218,7 +218,7 @@ function Verification() {
 
         {!hasAllocation && (
           <div className="verification-warning">
-            ⚠️ No active allocation. Please go to Matching page and confirm an allocation first.
+             No active allocation. Please go to Matching page and confirm an allocation first.
           </div>
         )}
 
@@ -234,7 +234,7 @@ function Verification() {
         {beneficiary && !beneficiary.alreadyClaimed && (
           <div className="verified-details">
             <div className="verified-details-header">
-              <span>✅</span>
+              <span></span>
               <span className="verified-details-title">Beneficiary Verified</span>
             </div>
             <div className="verified-row">

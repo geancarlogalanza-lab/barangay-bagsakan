@@ -69,7 +69,7 @@ function QRGeneration() {
         maxWidth: '600px',
         margin: '0 auto'
       }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}></div>
         <h2 style={{ color: '#1a1a2e', marginBottom: '0.5rem' }}>No Active Allocation</h2>
         <p style={{ color: '#666', marginBottom: '1.5rem' }}>
           No confirmed allocation found. Please go to Matching & Allocation to confirm an allocation first.
@@ -101,7 +101,7 @@ function QRGeneration() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <span className="icon">📱</span> QR Generation
+            <span className="icon"></span> QR Generation
           </h1>
           <p className="page-subtitle">Scan this QR code at the pickup point</p>
         </div>
@@ -133,7 +133,7 @@ function QRGeneration() {
             className="btn-secondary"
             style={{ marginTop: '0.5rem' }}
           >
-            🖨️ Print QR Code
+             Print QR Code
           </button>
         </div>
 
