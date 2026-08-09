@@ -11,7 +11,6 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [donors, setDonors] = useState([]);
   const { user, role } = useAuth();
   
   // Form state
@@ -19,33 +18,49 @@ function Dashboard() {
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState('kg');
   const [expiryHours, setExpiryHours] = useState('');
-  const [donorId, setDonorId] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [formMessage, setFormMessage] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
-    fetchDonors();
+    ensureDonorExists();
   }, []);
 
-  async function fetchDonors() {
-    // If user is logged in, use their ID as donor
-    if (user) {
-      setDonorId(user.id);
-      return;
-    }
+  // This function creates a donor record for the user if they don't have one
+  async function ensureDonorExists() {
+    if (!user) return;
 
-    const { data, error } = await supabase
-      .from('donors')
-      .select('id, name');
-    
-    if (error) {
-      console.error('Error fetching donors:', error);
-    } else {
-      setDonors(data || []);
-      if (data && data.length > 0) {
-        setDonorId(data[0].id);
+    try {
+      // Check if user exists in donors table
+      const { data: existingDonor, error: checkError } = await supabase
+        .from('donors')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking donor:', checkError);
       }
+
+      if (!existingDonor) {
+        // Create donor record
+        const { error: createError } = await supabase
+          .from('donors')
+          .insert({
+            id: user.id,
+            name: user.email?.split('@')[0] || 'Donor',
+            email: user.email,
+            address: 'Barangay Pasig'
+          });
+
+        if (createError) {
+          console.error('Error creating donor:', createError);
+        } else {
+          console.log('✅ Donor profile created for:', user.email);
+        }
+      }
+    } catch (error) {
+      console.error('Error in ensureDonorExists:', error);
     }
   }
 
@@ -82,7 +97,7 @@ function Dashboard() {
   async function handleAddDonation(e) {
     e.preventDefault();
     
-    if (!foodType || !quantity || !expiryHours || !donorId) {
+    if (!foodType || !quantity || !expiryHours) {
       setFormMessage('Please fill in all fields.');
       return;
     }
@@ -91,10 +106,18 @@ function Dashboard() {
     setFormMessage('');
 
     try {
+      // Make sure donor exists
+      if (!user) {
+        setFormMessage('You need to be logged in to donate.');
+        setFormLoading(false);
+        return;
+      }
+
+      // Insert donation using user.id as donor_id
       const { error } = await supabase
         .from('donations')
         .insert({
-          donor_id: donorId,
+          donor_id: user.id,
           food_type: foodType,
           quantity: parseFloat(quantity),
           unit: unit,
