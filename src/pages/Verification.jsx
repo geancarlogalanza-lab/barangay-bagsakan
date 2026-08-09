@@ -60,7 +60,6 @@ function Verification() {
     setMessage('');
 
     try {
-      // Find beneficiary by QR code
       const { data, error } = await supabase
         .from('beneficiaries')
         .select('*')
@@ -81,7 +80,6 @@ function Verification() {
         return;
       }
 
-      // Check if beneficiary already claimed today
       const today = new Date().toISOString().split('T')[0];
       const { data: claims, error: claimsError } = await supabase
         .from('transactions')
@@ -100,7 +98,6 @@ function Verification() {
         return;
       }
 
-      // Get today's allocation
       const { data: allocationData, error: allocationError } = await supabase
         .from('allocations')
         .select('*, donations(food_type, unit)')
@@ -174,22 +171,21 @@ function Verification() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            <span className="icon"></span> Pickup Verification
+            <span className="icon">✅</span> Pickup Verification
           </h1>
-          <p className="page-subtitle">Scan beneficiary QR codes to release food</p>
+          <p className="page-subtitle">Enter the beneficiary's QR code to verify and release food</p>
         </div>
         {hasAllocation && (
           <span className="badge badge-available">Active Distribution</span>
         )}
       </div>
 
-      {/* Verification Box */}
       <div className="verification-box">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '2rem' }}></span>
+          <span style={{ fontSize: '1.5rem' }}>🔍</span>
           <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1a1a2e' }}>Verify Beneficiary</div>
-            <div style={{ fontSize: '0.85rem', color: '#888' }}>Enter the QR code from the beneficiary's card</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1a1a2e' }}>Enter Beneficiary QR Code</div>
+            <div style={{ fontSize: '0.85rem', color: '#888' }}>Type the QR code from the beneficiary's card</div>
           </div>
         </div>
 
@@ -198,9 +194,18 @@ function Verification() {
             type="text"
             value={qrInput}
             onChange={(e) => setQrInput(e.target.value)}
-            placeholder="Enter QR code (e.g., BEN-001)"
+            placeholder="Type QR code (e.g., BEN-001)"
             onKeyDown={(e) => e.key === 'Enter' && verifyBeneficiary()}
             disabled={!hasAllocation}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              border: '2px solid #e0e0e0',
+              borderRadius: '10px',
+              fontSize: '1rem',
+              transition: 'all 0.3s ease',
+              background: !hasAllocation ? '#f5f5f5' : '#fafafa'
+            }}
           />
           <button
             onClick={verifyBeneficiary}
@@ -212,13 +217,13 @@ function Verification() {
               cursor: (loading || !hasAllocation) ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Verifying...' : 'Scan'}
+            {loading ? 'Verifying...' : 'Verify'}
           </button>
         </div>
 
         {!hasAllocation && (
           <div className="verification-warning">
-             No active allocation. Please go to Matching page and confirm an allocation first.
+            ⚠️ No active allocation. Please go to Matching page and confirm an allocation first.
           </div>
         )}
 
@@ -234,7 +239,7 @@ function Verification() {
         {beneficiary && !beneficiary.alreadyClaimed && (
           <div className="verified-details">
             <div className="verified-details-header">
-              <span></span>
+              <span>✅</span>
               <span className="verified-details-title">Beneficiary Verified</span>
             </div>
             <div className="verified-row">
@@ -263,7 +268,6 @@ function Verification() {
         )}
       </div>
 
-      {/* Recent Transactions */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
