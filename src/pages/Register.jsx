@@ -41,7 +41,6 @@ function Register() {
       return;
     }
 
-    // If signup was successful, create donor record
     if (data?.user) {
       try {
         const { error: donorError } = await supabase
@@ -55,9 +54,8 @@ function Register() {
 
         if (donorError) {
           console.error('Error creating donor:', donorError);
-          // Don't show error to user, they can still login
         } else {
-          console.log('✅ Donor profile created for:', email);
+          console.log('Donor profile created for:', email);
         }
       } catch (err) {
         console.error('Error in donor creation:', err);
@@ -71,35 +69,64 @@ function Register() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+      background: '#FAF7EE',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2rem'
     }}>
       <div style={{
-        background: 'white',
+        background: '#FFFFFF',
         padding: '2.5rem',
-        borderRadius: '16px',
-        maxWidth: '400px',
+        borderRadius: '20px',
+        maxWidth: '420px',
         width: '100%',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        boxShadow: '0 20px 60px rgba(20,20,10,0.08)',
+        border: '1px solid #E7E3D4'
       }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '0.25rem', color: '#1a1a2e' }}>
-          🍽️ Create Account
+        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+          <div style={{
+            display: 'inline-block',
+            background: '#24391F',
+            color: '#E8B44E',
+            padding: '4px 16px',
+            borderRadius: '999px',
+            fontSize: '0.7rem',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase'
+          }}>
+            Barangay Bagsakan
+          </div>
+        </div>
+        <h2 style={{
+          textAlign: 'center',
+          marginBottom: '0.25rem',
+          color: '#16180F',
+          fontSize: '1.6rem',
+          fontWeight: 800,
+          letterSpacing: '-0.02em'
+        }}>
+          Create Account
         </h2>
-        <p style={{ textAlign: 'center', color: '#666', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+        <p style={{
+          textAlign: 'center',
+          color: '#6E7160',
+          marginBottom: '1.75rem',
+          fontSize: '0.92rem'
+        }}>
           Register as a donor
         </p>
 
         {error && (
           <div style={{
-            background: '#ffebee',
-            color: '#c62828',
-            padding: '10px',
-            borderRadius: '8px',
-            marginBottom: '1rem',
-            fontSize: '0.9rem'
+            background: '#FFEBEE',
+            color: '#C62828',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            marginBottom: '1.25rem',
+            fontSize: '0.9rem',
+            border: '1px solid #FFCDD2'
           }}>
             {error}
           </div>
@@ -107,7 +134,13 @@ function Register() {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500', fontSize: '0.9rem' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '0.35rem',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: '#3C3E30'
+            }}>
               Email
             </label>
             <input
@@ -118,18 +151,33 @@ function Register() {
               required
               style={{
                 width: '100%',
-                padding: '10px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
+                padding: '12px 16px',
+                border: '1.5px solid #E7E3D4',
+                borderRadius: '10px',
                 fontSize: '1rem',
-                transition: 'border-color 0.3s'
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s ease',
+                background: '#FAFAF8'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#2d3b5e'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#24391F';
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.outline = 'none';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#E7E3D4';
+                e.currentTarget.style.background = '#FAFAF8';
+              }}
             />
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500', fontSize: '0.9rem' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '0.35rem',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: '#3C3E30'
+            }}>
               Password
             </label>
             <input
@@ -140,18 +188,33 @@ function Register() {
               required
               style={{
                 width: '100%',
-                padding: '10px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
+                padding: '12px 16px',
+                border: '1.5px solid #E7E3D4',
+                borderRadius: '10px',
                 fontSize: '1rem',
-                transition: 'border-color 0.3s'
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s ease',
+                background: '#FAFAF8'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#2d3b5e'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#24391F';
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.outline = 'none';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#E7E3D4';
+                e.currentTarget.style.background = '#FAFAF8';
+              }}
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '500', fontSize: '0.9rem' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '0.35rem',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: '#3C3E30'
+            }}>
               Confirm Password
             </label>
             <input
@@ -162,14 +225,23 @@ function Register() {
               required
               style={{
                 width: '100%',
-                padding: '10px',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
+                padding: '12px 16px',
+                border: '1.5px solid #E7E3D4',
+                borderRadius: '10px',
                 fontSize: '1rem',
-                transition: 'border-color 0.3s'
+                fontFamily: 'inherit',
+                transition: 'border-color 0.15s ease',
+                background: '#FAFAF8'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#2d3b5e'}
-              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#24391F';
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.outline = 'none';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#E7E3D4';
+                e.currentTarget.style.background = '#FAFAF8';
+              }}
             />
           </div>
           <button
@@ -177,34 +249,52 @@ function Register() {
             disabled={loading}
             style={{
               width: '100%',
-              padding: '12px',
-              background: 'linear-gradient(135deg, #2d3b5e, #1a1a2e)',
-              color: 'white',
+              padding: '14px',
+              background: '#24391F',
+              color: '#E8B44E',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '999px',
               fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
+              fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.6 : 1,
-              transition: 'all 0.3s ease'
+              transition: 'all 0.15s ease',
+              fontFamily: 'inherit'
             }}
             onMouseEnter={(e) => {
               if (!loading) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 20px rgba(45, 59, 94, 0.3)';
+                e.currentTarget.style.background = '#345A2C';
               }
             }}
             onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
+              e.currentTarget.style.background = '#24391F';
             }}
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', fontSize: '0.9rem', color: '#666', marginTop: '1rem' }}>
-          Already have an account? <Link to="/login" style={{ color: '#2d3b5e', fontWeight: '600', textDecoration: 'none' }}>Sign In</Link>
+        <p style={{
+          textAlign: 'center',
+          fontSize: '0.9rem',
+          color: '#6E7160',
+          marginTop: '1.25rem'
+        }}>
+          Already have an account?{' '}
+          <Link to="/login" style={{
+            color: '#24391F',
+            fontWeight: 700,
+            textDecoration: 'none',
+            transition: 'color 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#345A2C';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#24391F';
+          }}>
+            Sign In
+          </Link>
         </p>
       </div>
     </div>

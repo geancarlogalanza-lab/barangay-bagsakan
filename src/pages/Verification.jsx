@@ -167,29 +167,81 @@ function Verification() {
   }
 
   return (
-    <div style={{ padding: '0.5rem' }}>
-      <div className="page-header">
+    <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '0 32px 40px' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        marginBottom: '2rem',
+        paddingTop: '0.5rem'
+      }}>
         <div>
-          <h1 className="page-title">
-            <span className="icon">✅</span> Pickup Verification
+          <h1 style={{
+            margin: 0,
+            fontSize: '1.8rem',
+            fontWeight: 800,
+            color: '#16180F',
+            letterSpacing: '-0.02em'
+          }}>
+            Pickup Verification
           </h1>
-          <p className="page-subtitle">Enter the beneficiary's QR code to verify and release food</p>
+          <p style={{
+            margin: '4px 0 0 0',
+            fontSize: '0.92rem',
+            color: '#6E7160'
+          }}>
+            Enter the beneficiary's QR code to verify and release food
+          </p>
         </div>
         {hasAllocation && (
-          <span className="badge badge-available">Active Distribution</span>
+          <span style={{
+            background: '#E8F5E9',
+            color: '#2E7D32',
+            padding: '6px 16px',
+            borderRadius: '999px',
+            fontSize: '0.8rem',
+            fontWeight: 600
+          }}>
+            Active Distribution
+          </span>
         )}
       </div>
 
-      <div className="verification-box">
+      {/* Verification Box */}
+      <div style={{
+        background: '#FFFFFF',
+        padding: '2rem',
+        borderRadius: '16px',
+        border: '1px solid #E7E3D4',
+        maxWidth: '650px',
+        marginBottom: '2rem',
+        transition: 'all 0.2s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(20,20,10,0.06)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = 'none';
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>🔍</span>
+          <span style={{ fontSize: '1.3rem', color: '#6E7160' }}>🔍</span>
           <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#1a1a2e' }}>Enter Beneficiary QR Code</div>
-            <div style={{ fontSize: '0.85rem', color: '#888' }}>Type the QR code from the beneficiary's card</div>
+            <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#16180F' }}>
+              Enter Beneficiary QR Code
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#6E7160' }}>
+              Type the QR code from the beneficiary's card
+            </div>
           </div>
         </div>
 
-        <div className="verification-input-group">
+        <div style={{
+          display: 'flex',
+          gap: '0.75rem'
+        }}>
           <input
             type="text"
             value={qrInput}
@@ -200,21 +252,47 @@ function Verification() {
             style={{
               flex: 1,
               padding: '12px 16px',
-              border: '2px solid #e0e0e0',
+              border: '1.5px solid #E7E3D4',
               borderRadius: '10px',
               fontSize: '1rem',
-              transition: 'all 0.3s ease',
-              background: !hasAllocation ? '#f5f5f5' : '#fafafa'
+              fontFamily: 'inherit',
+              transition: 'all 0.15s ease',
+              background: !hasAllocation ? '#FAFAF8' : '#FFFFFF'
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#24391F';
+              e.currentTarget.style.outline = 'none';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(36,57,31,0.08)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#E7E3D4';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           />
           <button
             onClick={verifyBeneficiary}
             disabled={loading || !hasAllocation}
-            className="btn-primary"
             style={{
+              background: '#24391F',
+              color: '#E8B44E',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '999px',
+              fontWeight: 700,
+              fontSize: '0.95rem',
               whiteSpace: 'nowrap',
+              cursor: (loading || !hasAllocation) ? 'not-allowed' : 'pointer',
               opacity: (loading || !hasAllocation) ? 0.6 : 1,
-              cursor: (loading || !hasAllocation) ? 'not-allowed' : 'pointer'
+              transition: 'all 0.15s ease',
+              fontFamily: 'inherit'
+            }}
+            onMouseEnter={(e) => {
+              if (!loading && hasAllocation) {
+                e.currentTarget.style.background = '#345A2C';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#24391F';
             }}
           >
             {loading ? 'Verifying...' : 'Verify'}
@@ -222,45 +300,103 @@ function Verification() {
         </div>
 
         {!hasAllocation && (
-          <div className="verification-warning">
-            ⚠️ No active allocation. Please go to Matching page and confirm an allocation first.
+          <div style={{
+            marginTop: '0.75rem',
+            padding: '12px 16px',
+            background: '#FFF3E0',
+            color: '#E65100',
+            borderRadius: '10px',
+            fontSize: '0.9rem',
+            borderLeft: '4px solid #FF9800'
+          }}>
+            No active allocation. Please go to Matching page and confirm an allocation first.
           </div>
         )}
 
         {message && (
-          <div className={`verification-message ${
-            message.includes('verified') || message.includes('released') ? 'success' : 
-            message.includes('already') ? 'warning' : 'error'
-          }`}>
+          <div style={{
+            marginTop: '1rem',
+            padding: '12px 16px',
+            borderRadius: '10px',
+            fontSize: '0.95rem',
+            background: message.includes('verified') || message.includes('released') ? '#E8F5E9' : 
+                       message.includes('already') ? '#FFF3E0' : '#FFEBEE',
+            color: message.includes('verified') || message.includes('released') ? '#2E7D32' : 
+                   message.includes('already') ? '#E65100' : '#C62828',
+            border: `1px solid ${message.includes('verified') || message.includes('released') ? '#C8E6C9' : 
+                     message.includes('already') ? '#FFE0B2' : '#FFCDD2'}`
+          }}>
             {message}
           </div>
         )}
 
         {beneficiary && !beneficiary.alreadyClaimed && (
-          <div className="verified-details">
-            <div className="verified-details-header">
+          <div style={{
+            marginTop: '1.25rem',
+            padding: '1.25rem',
+            background: '#E8F5E9',
+            borderRadius: '12px',
+            borderLeft: '5px solid #4CAF50',
+            transition: 'transform 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateX(4px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateX(0)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
               <span>✅</span>
-              <span className="verified-details-title">Beneficiary Verified</span>
+              <span style={{ fontWeight: 600, color: '#1E3A2F', fontSize: '1rem' }}>Beneficiary Verified</span>
             </div>
-            <div className="verified-row">
-              <span className="verified-label">Name</span>
-              <span className="verified-value">{beneficiary.family_name}</span>
-            </div>
-            <div className="verified-row">
-              <span className="verified-label">Purok</span>
-              <span className="verified-value">Purok {beneficiary.purok}</span>
-            </div>
-            <div className="verified-row">
-              <span className="verified-label">Eligible For</span>
-              <span className="verified-value-highlight">
-                {beneficiary.portion} {beneficiary.allocation?.donations?.unit || 'kg'} of {beneficiary.foodType}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                <span style={{ color: '#2E7D32', fontSize: '0.85rem', fontWeight: 500 }}>Name</span>
+                <span style={{ color: '#16180F', fontWeight: 500 }}>{beneficiary.family_name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                <span style={{ color: '#2E7D32', fontSize: '0.85rem', fontWeight: 500 }}>Purok</span>
+                <span style={{ color: '#16180F', fontWeight: 500 }}>Purok {beneficiary.purok}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                <span style={{ color: '#2E7D32', fontSize: '0.85rem', fontWeight: 500 }}>Eligible For</span>
+                <span style={{
+                  color: '#1E3A2F',
+                  fontWeight: 600,
+                  background: 'rgba(46,125,50,0.15)',
+                  padding: '2px 10px',
+                  borderRadius: '6px'
+                }}>
+                  {beneficiary.portion} {beneficiary.allocation?.donations?.unit || 'kg'} of {beneficiary.foodType}
+                </span>
+              </div>
             </div>
             <button
               onClick={confirmRelease}
               disabled={loading}
-              className="btn-success"
-              style={{ width: '100%', marginTop: '0.5rem' }}
+              style={{
+                width: '100%',
+                marginTop: '0.75rem',
+                background: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                padding: '10px',
+                borderRadius: '999px',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                transition: 'all 0.15s ease',
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.background = '#43A047';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#4CAF50';
+              }}
             >
               {loading ? 'Processing...' : 'Confirm Release'}
             </button>
@@ -268,52 +404,106 @@ function Verification() {
         )}
       </div>
 
+      {/* Recent Transactions */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        marginTop: '2rem',
         marginBottom: '1rem'
       }}>
-        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#1a1a2e' }}>
+        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#16180F' }}>
           Recent Transactions
         </h3>
-        <span style={{ fontSize: '0.85rem', color: '#888' }}>
+        <span style={{ fontSize: '0.85rem', color: '#6E7160' }}>
           {recentScans.length} records
         </span>
       </div>
 
-      <div className="table-container">
-        <table>
+      <div style={{
+        overflowX: 'auto',
+        background: '#FFFFFF',
+        borderRadius: '16px',
+        border: '1px solid #E7E3D4',
+        boxShadow: '0 2px 8px rgba(20,20,10,0.04)'
+      }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontFamily: "'Inter', sans-serif"
+        }}>
           <thead>
-            <tr>
-              <th>Family</th>
-              <th>Time</th>
-              <th>Status</th>
+            <tr style={{
+              background: '#FAF7EE',
+              borderBottom: '1px solid #E7E3D4'
+            }}>
+              <th style={{
+                padding: '14px 20px',
+                textAlign: 'left',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: '#6E7160'
+              }}>Family</th>
+              <th style={{
+                padding: '14px 20px',
+                textAlign: 'left',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: '#6E7160'
+              }}>Time</th>
+              <th style={{
+                padding: '14px 20px',
+                textAlign: 'left',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: '#6E7160'
+              }}>Status</th>
             </tr>
           </thead>
           <tbody>
             {recentScans.length === 0 ? (
               <tr>
-                <td colSpan="3" style={{ padding: '2.5rem', textAlign: 'center', color: '#999' }}>
+                <td colSpan="3" style={{
+                  padding: '3rem',
+                  textAlign: 'center',
+                  color: '#6E7160',
+                  fontSize: '0.95rem'
+                }}>
                   No transactions yet.
                 </td>
               </tr>
             ) : (
               recentScans.map((scan) => (
-                <tr key={scan.id}>
-                  <td>
-                    <span style={{ fontWeight: '500' }}>
-                      {scan.beneficiaries?.family_name || 'Unknown'}
-                    </span>
+                <tr key={scan.id} style={{
+                  borderBottom: '1px solid #F0EDE0',
+                  transition: 'background 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#FAF8F0';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}>
+                  <td style={{ padding: '14px 20px', fontWeight: 500, color: '#16180F' }}>
+                    {scan.beneficiaries?.family_name || 'Unknown'}
                   </td>
-                  <td>
-                    <span style={{ color: '#666' }}>
-                      {new Date(scan.claimed_at).toLocaleString()}
-                    </span>
+                  <td style={{ padding: '14px 20px', color: '#6E7160' }}>
+                    {new Date(scan.claimed_at).toLocaleString()}
                   </td>
-                  <td>
-                    <span className={`badge ${scan.status === 'claimed' ? 'badge-available' : 'badge-expired'}`}>
+                  <td style={{ padding: '14px 20px' }}>
+                    <span style={{
+                      padding: '4px 14px',
+                      borderRadius: '999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      background: scan.status === 'claimed' ? '#E8F5E9' : '#FFEBEE',
+                      color: scan.status === 'claimed' ? '#2E7D32' : '#C62828'
+                    }}>
                       {scan.status}
                     </span>
                   </td>

@@ -16,25 +16,83 @@ function Navbar() {
   const visibleLinks = allLinks.filter(link => link.roles.includes(role));
 
   return (
-    <nav className="navbar">
-      <div className="navbar-brand">
-        🍽️ Barangay Bagsakan
+    <nav style={{
+      background: '#FFFFFF',
+      borderBottom: '1px solid #E7E3D4',
+      padding: '0.75rem 2rem',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000,
+      flexWrap: 'wrap',
+      gap: '0.5rem'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        fontWeight: 800,
+        fontSize: '1.3rem',
+        color: '#16180F',
+        letterSpacing: '-0.02em'
+      }}>
         <span style={{
-          background: 'rgba(255,255,255,0.15)',
-          padding: '2px 10px',
-          borderRadius: '12px',
-          fontSize: '0.6rem',
-          fontWeight: '500'
+          background: '#24391F',
+          color: '#E8B44E',
+          padding: '4px 14px',
+          borderRadius: '10px',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em'
+        }}>
+          Bagsakan
+        </span>
+        <span style={{
+          background: '#FAF7EE',
+          color: '#6E7160',
+          padding: '4px 14px',
+          borderRadius: '14px',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          border: '1px solid #E7E3D4'
         }}>
           {role || 'guest'}
         </span>
       </div>
-      <div className="navbar-links">
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.25rem',
+        flexWrap: 'wrap'
+      }}>
         {visibleLinks.map(link => (
           <Link 
             key={link.to}
             to={link.to}
-            className={location.pathname === link.to ? 'active' : ''}
+            style={{
+              color: location.pathname === link.to ? '#16180F' : '#6E7160',
+              background: location.pathname === link.to ? '#FAF7EE' : 'transparent',
+              textDecoration: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '999px',
+              fontWeight: location.pathname === link.to ? 600 : 500,
+              fontSize: '0.9rem',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#16180F';
+              e.currentTarget.style.background = '#FAF7EE';
+            }}
+            onMouseLeave={(e) => {
+              if (location.pathname !== link.to) {
+                e.currentTarget.style.color = '#6E7160';
+                e.currentTarget.style.background = 'transparent';
+              }
+            }}
           >
             {link.label}
           </Link>
@@ -45,19 +103,22 @@ function Navbar() {
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'rgba(255,255,255,0.7)',
+              color: '#6E7160',
               cursor: 'pointer',
               padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              transition: 'all 0.3s ease'
+              borderRadius: '999px',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              transition: 'all 0.15s ease',
+              fontFamily: 'inherit'
             }}
             onMouseEnter={(e) => {
-              e.target.style.color = 'white';
-              e.target.style.background = 'rgba(255,255,255,0.1)';
+              e.currentTarget.style.color = '#C62828';
+              e.currentTarget.style.background = '#FFEBEE';
             }}
             onMouseLeave={(e) => {
-              e.target.style.color = 'rgba(255,255,255,0.7)';
-              e.target.style.background = 'transparent';
+              e.currentTarget.style.color = '#6E7160';
+              e.currentTarget.style.background = 'transparent';
             }}
           >
             Logout

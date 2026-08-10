@@ -6,9 +6,12 @@ function QRGeneration() {
   const [allocation, setAllocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [donation, setDonation] = useState(null);
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [loadingBeneficiaries, setLoadingBeneficiaries] = useState(true);
 
   useEffect(() => {
     fetchLatestAllocation();
+    fetchBeneficiaries();
   }, []);
 
   async function fetchLatestAllocation() {
@@ -46,6 +49,19 @@ function QRGeneration() {
     setLoading(false);
   }
 
+  async function fetchBeneficiaries() {
+    const { data, error } = await supabase
+      .from('beneficiaries')
+      .select('id, family_name, qr_code')
+      .not('qr_code', 'is', null)
+      .order('family_name');
+
+    if (!error) {
+      setBeneficiaries(data || []);
+    }
+    setLoadingBeneficiaries(false);
+  }
+
   if (loading) {
     return (
       <div style={{ 
@@ -53,8 +69,8 @@ function QRGeneration() {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: '300px',
-        fontSize: '1.2rem',
-        color: '#666'
+        fontSize: '1.1rem',
+        color: '#6E7160'
       }}>
         Loading QR data...
       </div>
@@ -64,22 +80,34 @@ function QRGeneration() {
   if (!allocation || !donation) {
     return (
       <div style={{ 
-        padding: '2rem',
+        padding: '3rem',
         textAlign: 'center',
         maxWidth: '600px',
         margin: '0 auto'
       }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}></div>
-        <h2 style={{ color: '#1a1a2e', marginBottom: '0.5rem' }}>No Active Allocation</h2>
-        <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+        <h2 style={{ color: '#16180F', marginBottom: '0.5rem', fontWeight: 800 }}>
+          No Active Allocation
+        </h2>
+        <p style={{ color: '#6E7160', marginBottom: '1.5rem' }}>
           No confirmed allocation found. Please go to Matching & Allocation to confirm an allocation first.
         </p>
         <Link 
           to="/matching" 
-          className="btn-primary"
-          style={{ 
+          style={{
+            background: '#24391F',
+            color: '#E8B44E',
+            padding: '12px 28px',
+            borderRadius: '999px',
             textDecoration: 'none',
-            display: 'inline-block'
+            fontWeight: 700,
+            display: 'inline-block',
+            transition: 'background 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#345A2C';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#24391F';
           }}
         >
           Go to Matching
@@ -88,65 +116,173 @@ function QRGeneration() {
     );
   }
 
-  const qrData = JSON.stringify({
-    allocationId: allocation.id,
-    foodType: donation.food_type,
-    quantity: donation.quantity,
-    portionPerFamily: allocation.portion_per_family,
-    families: allocation.total_families
-  });
+  // Get the first beneficiary's QR code or use a default
+  const qrCodeValue = beneficiaries.length > 0 ? beneficiaries[0].qr_code : 'BEN-001';
 
   return (
-    <div style={{ padding: '0.5rem' }}>
-      <div className="page-header">
+    <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '0 32px 40px' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        marginBottom: '2rem',
+        paddingTop: '0.5rem'
+      }}>
         <div>
-          <h1 className="page-title">
-            <span className="icon"></span> QR Generation
+          <h1 style={{
+            margin: 0,
+            fontSize: '1.8rem',
+            fontWeight: 800,
+            color: '#16180F',
+            letterSpacing: '-0.02em'
+          }}>
+            QR Generation
           </h1>
-          <p className="page-subtitle">Scan this QR code at the pickup point</p>
+          <p style={{
+            margin: '4px 0 0 0',
+            fontSize: '0.92rem',
+            color: '#6E7160'
+          }}>
+            Scan this QR code at the pickup point
+          </p>
         </div>
-        <span className="badge badge-available">✅ Allocation Confirmed</span>
+        <span style={{
+          background: '#E8F5E9',
+          color: '#2E7D32',
+          padding: '6px 16px',
+          borderRadius: '999px',
+          fontSize: '0.8rem',
+          fontWeight: 600
+        }}>
+          Allocation Confirmed
+        </span>
       </div>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         gap: '2rem'
       }}>
         {/* QR Code Column */}
-        <div className="qr-card">
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#1a1a2e' }}>
+        <div style={{
+          background: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1px solid #E7E3D4',
+          padding: '2rem',
+          textAlign: 'center',
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(20,20,10,0.06)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = 'none';
+        }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#16180F' }}>
             Distribution QR Code
           </h3>
-          <div className="qr-code-wrapper">
+          <div style={{
+            display: 'inline-block',
+            padding: '1rem',
+            background: '#FFFFFF',
+            border: '2px solid #24391F',
+            borderRadius: '12px',
+            transition: 'all 0.2s ease'
+          }}>
             <img 
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}`}
-              alt="Distribution QR Code" 
-              className="qr-code-image"
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCodeValue)}`}
+              alt="Scannable QR Code"
+              style={{
+                width: '220px',
+                height: '220px',
+                display: 'block'
+              }}
             />
           </div>
-          <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.75rem' }}>
-            Scan this QR code at the pickup point
+          <p style={{
+            fontSize: '0.85rem',
+            color: '#6E7160',
+            marginTop: '0.75rem'
+          }}>
+            Scan this QR code with any phone camera
           </p>
+          <div style={{
+            background: '#FAF7EE',
+            padding: '0.75rem 1rem',
+            borderRadius: '10px',
+            marginTop: '0.75rem',
+            border: '1px solid #E7E3D4'
+          }}>
+            <span style={{ fontSize: '0.75rem', color: '#6E7160', fontWeight: 600 }}>
+              QR Code Value:
+            </span>
+            <code style={{
+              display: 'block',
+              marginTop: '4px',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              color: '#24391F',
+              background: '#FFFFFF',
+              padding: '4px 12px',
+              borderRadius: '6px',
+              border: '1px solid #E7E3D4',
+              fontFamily: '"Space Mono", monospace'
+            }}>
+              {qrCodeValue}
+            </code>
+            <p style={{
+              fontSize: '0.7rem',
+              color: '#6E7160',
+              marginTop: '6px'
+            }}>
+              Enter this code in the Verification page
+            </p>
+          </div>
           <button 
             onClick={() => window.print()}
-            className="btn-secondary"
-            style={{ marginTop: '0.5rem' }}
+            style={{
+              background: 'transparent',
+              color: '#24391F',
+              border: '1.5px solid #24391F',
+              padding: '8px 20px',
+              borderRadius: '999px',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              marginTop: '0.75rem'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#24391F';
+              e.currentTarget.style.color = '#FFFFFF';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#24391F';
+            }}
           >
-             Print QR Code
+            Print QR Code
           </button>
         </div>
 
         {/* Details Column */}
         <div style={{
-          background: 'white',
+          background: '#FFFFFF',
           borderRadius: '16px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.06)',
-          border: '1px solid rgba(0, 0, 0, 0.04)',
+          border: '1px solid #E7E3D4',
           padding: '2rem',
-          transition: 'all 0.3s ease'
+          transition: 'all 0.2s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(20,20,10,0.06)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = 'none';
         }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#1a1a2e' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#16180F' }}>
             Food Package Details
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -154,62 +290,140 @@ function QRGeneration() {
               display: 'flex',
               justifyContent: 'space-between',
               padding: '10px 0',
-              borderBottom: '1px solid #f0f0f0'
+              borderBottom: '1px solid #F0EDE0'
             }}>
-              <span style={{ color: '#666' }}>Food Item</span>
-              <span style={{ fontWeight: '600', color: '#1a1a2e' }}>{donation.food_type}</span>
+              <span style={{ color: '#6E7160' }}>Food Item</span>
+              <span style={{ fontWeight: 600, color: '#16180F' }}>{donation.food_type}</span>
             </div>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               padding: '10px 0',
-              borderBottom: '1px solid #f0f0f0'
+              borderBottom: '1px solid #F0EDE0'
             }}>
-              <span style={{ color: '#666' }}>Total Quantity</span>
-              <span style={{ fontWeight: '600', color: '#1a1a2e' }}>{donation.quantity} {donation.unit}</span>
+              <span style={{ color: '#6E7160' }}>Total Quantity</span>
+              <span style={{ fontWeight: 600, color: '#16180F' }}>{donation.quantity} {donation.unit}</span>
             </div>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               padding: '10px 0',
-              borderBottom: '1px solid #f0f0f0'
+              borderBottom: '1px solid #F0EDE0'
             }}>
-              <span style={{ color: '#666' }}>Per Family</span>
-              <span style={{ fontWeight: '600', color: '#1a1a2e' }}>{allocation.portion_per_family} {donation.unit}</span>
+              <span style={{ color: '#6E7160' }}>Per Family</span>
+              <span style={{ fontWeight: 600, color: '#16180F' }}>{allocation.portion_per_family} {donation.unit}</span>
             </div>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               padding: '10px 0'
             }}>
-              <span style={{ color: '#666' }}>Families Served</span>
-              <span style={{ fontWeight: '600', color: '#1a1a2e' }}>{allocation.total_families}</span>
+              <span style={{ color: '#6E7160' }}>Families Served</span>
+              <span style={{ fontWeight: 600, color: '#16180F' }}>{allocation.total_families}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Beneficiary QR Codes List */}
+      <div style={{
+        marginTop: '2rem',
+        background: '#FFFFFF',
+        borderRadius: '16px',
+        border: '1px solid #E7E3D4',
+        padding: '1.5rem',
+        transition: 'all 0.2s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(20,20,10,0.06)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = 'none';
+      }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#16180F' }}>
+          Beneficiary QR Codes
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+          gap: '1rem'
+        }}>
+          {beneficiaries.length === 0 ? (
+            <p style={{ color: '#6E7160', fontSize: '0.9rem' }}>No beneficiary QR codes generated yet.</p>
+          ) : (
+            beneficiaries.map((beneficiary) => (
+              <div key={beneficiary.id} style={{
+                background: '#FAF7EE',
+                padding: '0.75rem',
+                borderRadius: '10px',
+                border: '1px solid #E7E3D4',
+                textAlign: 'center'
+              }}>
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${beneficiary.qr_code}`}
+                  alt={`QR for ${beneficiary.family_name}`}
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    display: 'block',
+                    margin: '0 auto',
+                    borderRadius: '4px'
+                  }}
+                />
+                <div style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#16180F',
+                  marginTop: '4px'
+                }}>
+                  {beneficiary.family_name}
+                </div>
+                <code style={{
+                  fontSize: '0.65rem',
+                  color: '#6E7160',
+                  fontFamily: '"Space Mono", monospace',
+                  background: '#FFFFFF',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  display: 'inline-block',
+                  marginTop: '2px'
+                }}>
+                  {beneficiary.qr_code}
+                </code>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       {/* Footer Info */}
       <div style={{
         marginTop: '1.5rem',
-        background: '#f5f7fa',
+        background: '#FAF7EE',
         padding: '1.5rem',
-        borderRadius: '12px',
+        borderRadius: '16px',
+        border: '1px solid #E7E3D4',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '1rem'
       }}>
         <div>
-          <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase' }}>Distribution ID</div>
-          <div style={{ fontWeight: '600', color: '#1a1a2e' }}>{allocation.id.slice(0, 12)}...</div>
+          <div style={{ fontSize: '0.75rem', color: '#6E7160', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Distribution ID
+          </div>
+          <div style={{ fontWeight: 600, color: '#16180F' }}>{allocation.id.slice(0, 12)}...</div>
         </div>
         <div>
-          <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase' }}>Pickup Location</div>
-          <div style={{ fontWeight: '600', color: '#1a1a2e' }}>Barangay Hall, Purok 1-3</div>
+          <div style={{ fontSize: '0.75rem', color: '#6E7160', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Pickup Location
+          </div>
+          <div style={{ fontWeight: 600, color: '#16180F' }}>Barangay Hall, Purok 1-3</div>
         </div>
         <div>
-          <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase' }}>Pickup Time</div>
-          <div style={{ fontWeight: '600', color: '#1a1a2e' }}>2:00 PM - 5:00 PM</div>
+          <div style={{ fontSize: '0.75rem', color: '#6E7160', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Pickup Time
+          </div>
+          <div style={{ fontWeight: 600, color: '#16180F' }}>2:00 PM - 5:00 PM</div>
         </div>
       </div>
     </div>
