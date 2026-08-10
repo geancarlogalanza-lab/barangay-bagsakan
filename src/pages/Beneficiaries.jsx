@@ -22,13 +22,15 @@ function Beneficiaries() {
     } else {
       setBeneficiaries(data || []);
     }
+
     setLoading(false);
   }
 
   async function generateQRCode(id) {
     setGenerating(id);
-    
+
     const beneficiary = beneficiaries.find(b => b.id === id);
+
     if (!beneficiary) {
       console.error('Beneficiary not found');
       setGenerating(null);
@@ -36,15 +38,16 @@ function Beneficiaries() {
     }
 
     let qrCode = beneficiary.qr_code;
+
     if (!qrCode) {
       qrCode = `BEN-${String(id).slice(0, 8).toUpperCase()}`;
     }
 
     const { error } = await supabase
       .from('beneficiaries')
-      .update({ 
+      .update({
         qr_code: qrCode,
-        qr_printed: true 
+        qr_printed: true
       })
       .eq('id', id);
 
@@ -53,15 +56,16 @@ function Beneficiaries() {
     } else {
       await fetchBeneficiaries();
     }
+
     setGenerating(null);
   }
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '300px',
         fontSize: '1.1rem',
         color: '#6E7160'
@@ -75,11 +79,16 @@ function Beneficiaries() {
   const needQR = beneficiaries.filter(b => !b.qr_printed).length;
 
   return (
-    <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '0 32px 40px' }}>
+    <div style={{
+      maxWidth: '1180px',
+      margin: '0 auto',
+      padding: '0 32px 40px'
+    }}>
+
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '1rem',
@@ -87,8 +96,8 @@ function Beneficiaries() {
         paddingTop: '0.5rem'
       }}>
         <div>
-          <h1 style={{ 
-            margin: 0, 
+          <h1 style={{
+            margin: 0,
             fontSize: '1.8rem',
             fontWeight: 800,
             color: '#16180F',
@@ -96,7 +105,8 @@ function Beneficiaries() {
           }}>
             Beneficiaries
           </h1>
-          <p style={{ 
+
+          <p style={{
             margin: '4px 0 0 0',
             fontSize: '0.92rem',
             color: '#6E7160'
@@ -104,6 +114,7 @@ function Beneficiaries() {
             Manage registered families and their QR codes
           </p>
         </div>
+
         <div style={{
           display: 'flex',
           gap: '0.5rem',
@@ -119,6 +130,7 @@ function Beneficiaries() {
           }}>
             Total: {beneficiaries.length}
           </span>
+
           <span style={{
             background: '#E8F5E9',
             color: '#2E7D32',
@@ -129,6 +141,7 @@ function Beneficiaries() {
           }}>
             With QR: {withQR}
           </span>
+
           <span style={{
             background: '#FFF3E0',
             color: '#E65100',
@@ -168,7 +181,10 @@ function Beneficiaries() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 color: '#6E7160'
-              }}>Status</th>
+              }}>
+                Status
+              </th>
+
               <th style={{
                 padding: '14px 20px',
                 textAlign: 'left',
@@ -177,7 +193,10 @@ function Beneficiaries() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 color: '#6E7160'
-              }}>Family Name</th>
+              }}>
+                Family Name
+              </th>
+
               <th style={{
                 padding: '14px 20px',
                 textAlign: 'left',
@@ -186,7 +205,10 @@ function Beneficiaries() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 color: '#6E7160'
-              }}>Purok</th>
+              }}>
+                Purok
+              </th>
+
               <th style={{
                 padding: '14px 20px',
                 textAlign: 'left',
@@ -195,7 +217,10 @@ function Beneficiaries() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 color: '#6E7160'
-              }}>Priority</th>
+              }}>
+                Priority
+              </th>
+
               <th style={{
                 padding: '14px 20px',
                 textAlign: 'left',
@@ -204,7 +229,10 @@ function Beneficiaries() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 color: '#6E7160'
-              }}>QR Code</th>
+              }}>
+                QR Code
+              </th>
+
               <th style={{
                 padding: '14px 20px',
                 textAlign: 'left',
@@ -213,36 +241,62 @@ function Beneficiaries() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 color: '#6E7160'
-              }}>Action</th>
+              }}>
+                Action
+              </th>
             </tr>
           </thead>
+
           <tbody>
             {beneficiaries.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{
-                  padding: '3rem',
-                  textAlign: 'center',
-                  color: '#6E7160',
-                  fontSize: '0.95rem'
-                }}>
+                <td
+                  colSpan="6"
+                  style={{
+                    padding: '3rem',
+                    textAlign: 'center',
+                    color: '#6E7160',
+                    fontSize: '0.95rem'
+                  }}
+                >
                   No beneficiaries registered yet.
                 </td>
               </tr>
             ) : (
               beneficiaries.map((beneficiary) => (
-                <tr key={beneficiary.id} style={{
-                  borderBottom: '1px solid #F0EDE0',
-                  transition: 'background 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#FAF8F0';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}>
-                  <td style={{ padding: '14px 20px', fontSize: '1.1rem' }}>
-                    {beneficiary.qr_printed ? "✅" : "pending"}
+                <tr
+                  key={beneficiary.id}
+                  style={{
+                    borderBottom: '1px solid #F0EDE0',
+                    transition: 'background 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#FAF8F0';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+
+                  {/* Status */}
+                  <td style={{ padding: '14px 20px' }}>
+                    <span style={{
+                      background: beneficiary.qr_printed
+                        ? '#E8F5E9'
+                        : '#FFF3E0',
+                      color: beneficiary.qr_printed
+                        ? '#2E7D32'
+                        : '#E65100',
+                      padding: '4px 14px',
+                      borderRadius: '999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600
+                    }}>
+                      {beneficiary.qr_printed ? 'Generated' : 'Pending'}
+                    </span>
                   </td>
+
+                  {/* Family Name */}
                   <td style={{
                     padding: '14px 20px',
                     fontWeight: 500,
@@ -250,6 +304,8 @@ function Beneficiaries() {
                   }}>
                     {beneficiary.family_name}
                   </td>
+
+                  {/* Purok */}
                   <td style={{ padding: '14px 20px' }}>
                     <span style={{
                       background: '#F0EDE0',
@@ -262,12 +318,24 @@ function Beneficiaries() {
                       {beneficiary.purok}
                     </span>
                   </td>
+
+                  {/* Priority */}
                   <td style={{ padding: '14px 20px' }}>
                     <span style={{
-                      background: beneficiary.priority === 'high' ? '#FFEBEE' :
-                                 beneficiary.priority === 'medium' ? '#FFF3E0' : '#E8F5E9',
-                      color: beneficiary.priority === 'high' ? '#C62828' :
-                             beneficiary.priority === 'medium' ? '#E65100' : '#2E7D32',
+                      background:
+                        beneficiary.priority === 'high'
+                          ? '#FFEBEE'
+                          : beneficiary.priority === 'medium'
+                            ? '#FFF3E0'
+                            : '#E8F5E9',
+
+                      color:
+                        beneficiary.priority === 'high'
+                          ? '#C62828'
+                          : beneficiary.priority === 'medium'
+                            ? '#E65100'
+                            : '#2E7D32',
+
                       padding: '4px 14px',
                       borderRadius: '999px',
                       fontSize: '0.75rem',
@@ -277,27 +345,31 @@ function Beneficiaries() {
                       {beneficiary.priority}
                     </span>
                   </td>
+
+                  {/* QR Code */}
                   <td style={{ padding: '14px 20px' }}>
                     {beneficiary.qr_printed && beneficiary.qr_code ? (
-                      <div style={{
-                        display: 'inline-block',
-                        padding: '4px',
-                        background: '#FFFFFF',
-                        borderRadius: '8px',
-                        border: '1px solid #E7E3D4',
-                        transition: 'transform 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                      }}>
-                        <img 
+                      <div
+                        style={{
+                          display: 'inline-block',
+                          padding: '4px',
+                          background: '#FFFFFF',
+                          borderRadius: '8px',
+                          border: '1px solid #E7E3D4',
+                          transition: 'transform 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${beneficiary.qr_code}`}
                           alt={`QR Code for ${beneficiary.family_name}`}
-                          style={{ 
-                            width: '50px', 
+                          style={{
+                            width: '50px',
                             height: '50px',
                             display: 'block',
                             borderRadius: '4px'
@@ -305,11 +377,16 @@ function Beneficiaries() {
                         />
                       </div>
                     ) : (
-                      <span style={{ color: '#6E7160', fontSize: '0.85rem' }}>
+                      <span style={{
+                        color: '#6E7160',
+                        fontSize: '0.85rem'
+                      }}>
                         Not generated
                       </span>
                     )}
                   </td>
+
+                  {/* Action */}
                   <td style={{ padding: '14px 20px' }}>
                     {!beneficiary.qr_printed ? (
                       <button
@@ -323,7 +400,9 @@ function Beneficiaries() {
                           borderRadius: '999px',
                           fontSize: '0.82rem',
                           fontWeight: 600,
-                          cursor: generating === beneficiary.id ? 'not-allowed' : 'pointer',
+                          cursor: generating === beneficiary.id
+                            ? 'not-allowed'
+                            : 'pointer',
                           opacity: generating === beneficiary.id ? 0.6 : 1,
                           transition: 'all 0.15s ease'
                         }}
@@ -336,7 +415,9 @@ function Beneficiaries() {
                           e.currentTarget.style.background = '#24391F';
                         }}
                       >
-                        {generating === beneficiary.id ? 'Generating...' : 'Generate QR'}
+                        {generating === beneficiary.id
+                          ? 'Generating...'
+                          : 'Generate QR'}
                       </button>
                     ) : (
                       <span style={{
@@ -348,6 +429,7 @@ function Beneficiaries() {
                       </span>
                     )}
                   </td>
+
                 </tr>
               ))
             )}

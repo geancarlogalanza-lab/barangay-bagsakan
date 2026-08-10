@@ -1,22 +1,28 @@
 import { useState, useEffect } from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
-import { Link } from 'react-router-dom';
 
 function QRGeneration() {
   const [allocation, setAllocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [donation, setDonation] = useState(null);
-  const [beneficiaries, setBeneficiaries] = useState([]);
-  const [loadingBeneficiaries, setLoadingBeneficiaries] = useState(true);
+  const location = useLocation();
+
+  // Get QR code from URL query parameter
+  const queryParams = new URLSearchParams(location.search);
+  const qrCodeFromUrl = queryParams.get('code');
 
   useEffect(() => {
-    fetchLatestAllocation();
-    fetchBeneficiaries();
+    fetchAllData();
   }, []);
 
-  async function fetchLatestAllocation() {
+  async function fetchAllData() {
     setLoading(true);
-    
+    await fetchLatestAllocation();
+    setLoading(false);
+  }
+
+  async function fetchLatestAllocation() {
     const { data: allocationData, error: allocationError } = await supabase
       .from('allocations')
       .select('*')
@@ -26,7 +32,6 @@ function QRGeneration() {
 
     if (allocationError) {
       console.error('Error fetching allocation:', allocationError);
-      setLoading(false);
       return;
     }
 
@@ -39,27 +44,10 @@ function QRGeneration() {
         .eq('id', allocationData[0].donation_id)
         .single();
 
-      if (donationError) {
-        console.error('Error fetching donation:', donationError);
-      } else {
+      if (!donationError) {
         setDonation(donationData);
       }
     }
-    
-    setLoading(false);
-  }
-
-  async function fetchBeneficiaries() {
-    const { data, error } = await supabase
-      .from('beneficiaries')
-      .select('id, family_name, qr_code')
-      .not('qr_code', 'is', null)
-      .order('family_name');
-
-    if (!error) {
-      setBeneficiaries(data || []);
-    }
-    setLoadingBeneficiaries(false);
   }
 
   if (loading) {
@@ -116,12 +104,11 @@ function QRGeneration() {
     );
   }
 
-  // Get the first beneficiary's QR code or use a default
-  const qrCodeValue = beneficiaries.length > 0 ? beneficiaries[0].qr_code : 'BEN-001';
+  // Use QR code from URL if available
+  const displayQRCode = qrCodeFromUrl || 'BEN-001';
 
   return (
     <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '0 32px 40px' }}>
-      {/* Header */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -146,7 +133,7 @@ function QRGeneration() {
             fontSize: '0.92rem',
             color: '#6E7160'
           }}>
-            Scan this QR code at the pickup point
+            {qrCodeFromUrl ? `QR Code: ${qrCodeFromUrl}` : 'Generate a QR code from Beneficiaries'}
           </p>
         </div>
         <span style={{
@@ -166,7 +153,6 @@ function QRGeneration() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         gap: '2rem'
       }}>
-        {/* QR Code Column */}
         <div style={{
           background: '#FFFFFF',
           borderRadius: '16px',
@@ -189,11 +175,11 @@ function QRGeneration() {
             padding: '1rem',
             background: '#FFFFFF',
             border: '2px solid #24391F',
-            borderRadius: '12px',
-            transition: 'all 0.2s ease'
+            borderRadius: '12px'
           }}>
             <img 
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCodeValue)}`}
+              key={displayQRCode}
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${displayQRCode}`}
               alt="Scannable QR Code"
               style={{
                 width: '220px',
@@ -231,7 +217,7 @@ function QRGeneration() {
               border: '1px solid #E7E3D4',
               fontFamily: '"Space Mono", monospace'
             }}>
-              {qrCodeValue}
+              {displayQRCode}
             </code>
             <p style={{
               fontSize: '0.7rem',
@@ -268,7 +254,6 @@ function QRGeneration() {
           </button>
         </div>
 
-        {/* Details Column */}
         <div style={{
           background: '#FFFFFF',
           borderRadius: '16px',
@@ -325,78 +310,6 @@ function QRGeneration() {
         </div>
       </div>
 
-      {/* Beneficiary QR Codes List */}
-      <div style={{
-        marginTop: '2rem',
-        background: '#FFFFFF',
-        borderRadius: '16px',
-        border: '1px solid #E7E3D4',
-        padding: '1.5rem',
-        transition: 'all 0.2s ease'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(20,20,10,0.06)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = 'none';
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#16180F' }}>
-          Beneficiary QR Codes
-        </h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-          gap: '1rem'
-        }}>
-          {beneficiaries.length === 0 ? (
-            <p style={{ color: '#6E7160', fontSize: '0.9rem' }}>No beneficiary QR codes generated yet.</p>
-          ) : (
-            beneficiaries.map((beneficiary) => (
-              <div key={beneficiary.id} style={{
-                background: '#FAF7EE',
-                padding: '0.75rem',
-                borderRadius: '10px',
-                border: '1px solid #E7E3D4',
-                textAlign: 'center'
-              }}>
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${beneficiary.qr_code}`}
-                  alt={`QR for ${beneficiary.family_name}`}
-                  style={{
-                    width: '60px',
-                    height: '60px',
-                    display: 'block',
-                    margin: '0 auto',
-                    borderRadius: '4px'
-                  }}
-                />
-                <div style={{
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  color: '#16180F',
-                  marginTop: '4px'
-                }}>
-                  {beneficiary.family_name}
-                </div>
-                <code style={{
-                  fontSize: '0.65rem',
-                  color: '#6E7160',
-                  fontFamily: '"Space Mono", monospace',
-                  background: '#FFFFFF',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  display: 'inline-block',
-                  marginTop: '2px'
-                }}>
-                  {beneficiary.qr_code}
-                </code>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Footer Info */}
       <div style={{
         marginTop: '1.5rem',
         background: '#FAF7EE',
