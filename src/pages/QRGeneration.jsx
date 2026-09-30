@@ -1,61 +1,67 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import QRCodeImage from '../components/QRCodeImage';
 
 function QRGeneration() {
   const [allocation, setAllocation] = useState(null);
+  const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [donation, setDonation] = useState(null);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
   const location = useLocation();
 
-  // Get QR code from URL query parameter
-  const queryParams = new URLSearchParams(location.search);
-  const qrCodeFromUrl = queryParams.get('code');
+  // A specific family's QR can be opened from the Beneficiaries page (/qr?code=BEN-XXXXXXXX)
+  const qrCodeFromUrl = (new URLSearchParams(location.search).get('code') || '').trim().toUpperCase();
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    let cancelled = false;
 
-  async function fetchAllData() {
-    setLoading(true);
-    await fetchLatestAllocation();
-    setLoading(false);
-  }
+    async function fetchQRData() {
+      setLoading(true);
+      setError('');
 
-  async function fetchLatestAllocation() {
-    const { data: allocationData, error: allocationError } = await supabase
-      .from('allocations')
-      .select('*')
-      .eq('status', 'confirmed')
-      .order('distributed_at', { ascending: false })
-      .limit(1);
+      const [allocationResult, beneficiariesResult] = await Promise.all([
+        supabase
+          .from('allocations')
+          .select('*, donations(food_type, quantity, unit)')
+          .eq('status', 'confirmed')
+          .order('distributed_at', { ascending: false })
+          .limit(1),
+        supabase
+          .from('beneficiaries')
+          .select('id, family_name, purok, qr_code')
+          .not('qr_code', 'is', null)
+          .order('family_name')
+      ]);
 
-    if (allocationError) {
-      console.error('Error fetching allocation:', allocationError);
-      return;
-    }
+      if (cancelled) return;
 
-    if (allocationData && allocationData.length > 0) {
-      setAllocation(allocationData[0]);
-      
-      const { data: donationData, error: donationError } = await supabase
-        .from('donations')
-        .select('*')
-        .eq('id', allocationData[0].donation_id)
-        .single();
-
-      if (!donationError) {
-        setDonation(donationData);
+      const queryError = allocationResult.error || beneficiariesResult.error;
+      if (queryError) {
+        console.error('Error loading QR data:', queryError);
+        setError('Could not load QR data from the database. Please check your connection and try again.');
+      } else {
+        setAllocation(allocationResult.data[0] || null);
+        setBeneficiaries(beneficiariesResult.data || []);
       }
+
+      setLoading(false);
     }
-  }
+
+    fetchQRData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '300px',
         fontSize: '1.1rem',
         color: '#6E7160'
@@ -65,22 +71,55 @@ function QRGeneration() {
     );
   }
 
-  if (!allocation || !donation) {
+  if (error) {
     return (
-      <div style={{ 
+      <div style={{
         padding: '3rem',
         textAlign: 'center',
         maxWidth: '600px',
         margin: '0 auto'
       }}>
         <h2 style={{ color: '#16180F', marginBottom: '0.5rem', fontWeight: 800 }}>
-          No Active Allocation
+          Unable to Load QR Codes
+        </h2>
+        <p style={{ color: '#C62828', marginBottom: '1.5rem' }}>
+          {error}
+        </p>
+        <button
+          onClick={() => setReloadKey((k) => k + 1)}
+          style={{
+            background: '#24391F',
+            color: '#E8B44E',
+            border: 'none',
+            padding: '12px 28px',
+            borderRadius: '999px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontFamily: 'inherit'
+          }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (beneficiaries.length === 0) {
+    return (
+      <div style={{
+        padding: '3rem',
+        textAlign: 'center',
+        maxWidth: '600px',
+        margin: '0 auto'
+      }}>
+        <h2 style={{ color: '#16180F', marginBottom: '0.5rem', fontWeight: 800 }}>
+          No QR Codes Yet
         </h2>
         <p style={{ color: '#6E7160', marginBottom: '1.5rem' }}>
-          No confirmed allocation found. Please go to Matching & Allocation to confirm an allocation first.
+          No beneficiary has a QR code yet. Generate one from the Beneficiaries page first.
         </p>
-        <Link 
-          to="/matching" 
+        <Link
+          to="/beneficiaries"
           style={{
             background: '#24391F',
             color: '#E8B44E',
@@ -88,24 +127,20 @@ function QRGeneration() {
             borderRadius: '999px',
             textDecoration: 'none',
             fontWeight: 700,
-            display: 'inline-block',
-            transition: 'background 0.15s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#345A2C';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#24391F';
+            display: 'inline-block'
           }}
         >
-          Go to Matching
+          Go to Beneficiaries
         </Link>
       </div>
     );
   }
 
-  // Use QR code from URL if available
-  const displayQRCode = qrCodeFromUrl || 'BEN-001';
+  // Show the family from the URL, or the first family with a QR code
+  const selected = qrCodeFromUrl
+    ? beneficiaries.find((b) => b.qr_code === qrCodeFromUrl)
+    : beneficiaries[0];
+  const donation = allocation?.donations;
 
   return (
     <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '0 32px 40px' }}>
@@ -133,18 +168,18 @@ function QRGeneration() {
             fontSize: '0.92rem',
             color: '#6E7160'
           }}>
-            {qrCodeFromUrl ? `QR Code: ${qrCodeFromUrl}` : 'Generate a QR code from Beneficiaries'}
+            {selected ? `QR code for ${selected.family_name}` : 'Select a family below to show their QR code'}
           </p>
         </div>
         <span style={{
-          background: '#E8F5E9',
-          color: '#2E7D32',
+          background: allocation ? '#E8F5E9' : '#FFF3E0',
+          color: allocation ? '#2E7D32' : '#E65100',
           padding: '6px 16px',
           borderRadius: '999px',
           fontSize: '0.8rem',
           fontWeight: 600
         }}>
-          Allocation Confirmed
+          {allocation ? 'Allocation Confirmed' : 'No Active Allocation'}
         </span>
       </div>
 
@@ -170,88 +205,113 @@ function QRGeneration() {
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#16180F' }}>
             Distribution QR Code
           </h3>
-          <div style={{
-            display: 'inline-block',
-            padding: '1rem',
-            background: '#FFFFFF',
-            border: '2px solid #24391F',
-            borderRadius: '12px'
-          }}>
-            <img 
-              key={displayQRCode}
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${displayQRCode}`}
-              alt="Scannable QR Code"
-              style={{
-                width: '220px',
-                height: '220px',
-                display: 'block'
-              }}
-            />
-          </div>
-          <p style={{
-            fontSize: '0.85rem',
-            color: '#6E7160',
-            marginTop: '0.75rem'
-          }}>
-            Scan this QR code with any phone camera
-          </p>
-          <div style={{
-            background: '#FAF7EE',
-            padding: '0.75rem 1rem',
-            borderRadius: '10px',
-            marginTop: '0.75rem',
-            border: '1px solid #E7E3D4'
-          }}>
-            <span style={{ fontSize: '0.75rem', color: '#6E7160', fontWeight: 600 }}>
-              QR Code Value:
-            </span>
-            <code style={{
-              display: 'block',
-              marginTop: '4px',
+          {selected ? (
+            <>
+              <div style={{
+                display: 'inline-block',
+                padding: '1rem',
+                background: '#FFFFFF',
+                border: '2px solid #24391F',
+                borderRadius: '12px'
+              }}>
+                <QRCodeImage
+                  value={selected.qr_code}
+                  size={220}
+                  alt={`Scannable QR Code for ${selected.family_name}`}
+                />
+              </div>
+              <div style={{
+                marginTop: '0.75rem',
+                fontWeight: 700,
+                fontSize: '1.05rem',
+                color: '#16180F'
+              }}>
+                {selected.family_name}
+              </div>
+              {selected.purok && (
+                <div style={{ fontSize: '0.85rem', color: '#6E7160' }}>
+                  Purok {selected.purok}
+                </div>
+              )}
+              <p style={{
+                fontSize: '0.85rem',
+                color: '#6E7160',
+                marginTop: '0.75rem'
+              }}>
+                Scan this QR code with any phone camera
+              </p>
+              <div style={{
+                background: '#FAF7EE',
+                padding: '0.75rem 1rem',
+                borderRadius: '10px',
+                marginTop: '0.75rem',
+                border: '1px solid #E7E3D4'
+              }}>
+                <span style={{ fontSize: '0.75rem', color: '#6E7160', fontWeight: 600 }}>
+                  QR Code Value:
+                </span>
+                <code style={{
+                  display: 'block',
+                  marginTop: '4px',
+                  fontSize: '0.9rem',
+                  fontWeight: 700,
+                  color: '#24391F',
+                  background: '#FFFFFF',
+                  padding: '4px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #E7E3D4',
+                  fontFamily: '"Space Mono", monospace'
+                }}>
+                  {selected.qr_code}
+                </code>
+                <p style={{
+                  fontSize: '0.7rem',
+                  color: '#6E7160',
+                  marginTop: '6px'
+                }}>
+                  Enter this code in the Verification page
+                </p>
+              </div>
+              <button
+                className="no-print"
+                onClick={() => window.print()}
+                style={{
+                  background: 'transparent',
+                  color: '#24391F',
+                  border: '1.5px solid #24391F',
+                  padding: '8px 20px',
+                  borderRadius: '999px',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  marginTop: '0.75rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#24391F';
+                  e.currentTarget.style.color = '#FFFFFF';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#24391F';
+                }}
+              >
+                Print QR Code
+              </button>
+            </>
+          ) : (
+            <div style={{
+              padding: '12px 16px',
+              background: '#FFEBEE',
+              color: '#C62828',
+              borderRadius: '10px',
               fontSize: '0.9rem',
-              fontWeight: 700,
-              color: '#24391F',
-              background: '#FFFFFF',
-              padding: '4px 12px',
-              borderRadius: '6px',
-              border: '1px solid #E7E3D4',
-              fontFamily: '"Space Mono", monospace'
+              border: '1px solid #FFCDD2'
             }}>
-              {displayQRCode}
-            </code>
-            <p style={{
-              fontSize: '0.7rem',
-              color: '#6E7160',
-              marginTop: '6px'
-            }}>
-              Enter this code in the Verification page
-            </p>
-          </div>
-          <button 
-            onClick={() => window.print()}
-            style={{
-              background: 'transparent',
-              color: '#24391F',
-              border: '1.5px solid #24391F',
-              padding: '8px 20px',
-              borderRadius: '999px',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              marginTop: '0.75rem'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#24391F';
-              e.currentTarget.style.color = '#FFFFFF';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = '#24391F';
-            }}
-          >
-            Print QR Code
-          </button>
+              QR code "{qrCodeFromUrl}" does not belong to any registered beneficiary.
+              Select a family below.
+            </div>
+          )}
         </div>
 
         <div style={{
@@ -270,43 +330,67 @@ function QRGeneration() {
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', fontWeight: 700, color: '#16180F' }}>
             Food Package Details
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '10px 0',
-              borderBottom: '1px solid #F0EDE0'
-            }}>
-              <span style={{ color: '#6E7160' }}>Food Item</span>
-              <span style={{ fontWeight: 600, color: '#16180F' }}>{donation.food_type}</span>
+          {allocation && donation ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '10px 0',
+                borderBottom: '1px solid #F0EDE0'
+              }}>
+                <span style={{ color: '#6E7160' }}>Food Item</span>
+                <span style={{ fontWeight: 600, color: '#16180F' }}>{donation.food_type}</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '10px 0',
+                borderBottom: '1px solid #F0EDE0'
+              }}>
+                <span style={{ color: '#6E7160' }}>Total Quantity</span>
+                <span style={{ fontWeight: 600, color: '#16180F' }}>{donation.quantity} {donation.unit}</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '10px 0',
+                borderBottom: '1px solid #F0EDE0'
+              }}>
+                <span style={{ color: '#6E7160' }}>Per Family</span>
+                <span style={{ fontWeight: 600, color: '#16180F' }}>{allocation.portion_per_family} {donation.unit}</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '10px 0'
+              }}>
+                <span style={{ color: '#6E7160' }}>Families Served</span>
+                <span style={{ fontWeight: 600, color: '#16180F' }}>{allocation.total_families}</span>
+              </div>
             </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '10px 0',
-              borderBottom: '1px solid #F0EDE0'
-            }}>
-              <span style={{ color: '#6E7160' }}>Total Quantity</span>
-              <span style={{ fontWeight: 600, color: '#16180F' }}>{donation.quantity} {donation.unit}</span>
+          ) : (
+            <div>
+              <p style={{ color: '#6E7160', marginTop: 0 }}>
+                No confirmed allocation yet. This QR code is valid, but it cannot be
+                verified at pickup until an allocation is confirmed.
+              </p>
+              <Link
+                to="/matching"
+                className="no-print"
+                style={{
+                  background: '#24391F',
+                  color: '#E8B44E',
+                  padding: '10px 24px',
+                  borderRadius: '999px',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  display: 'inline-block'
+                }}
+              >
+                Go to Matching
+              </Link>
             </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '10px 0',
-              borderBottom: '1px solid #F0EDE0'
-            }}>
-              <span style={{ color: '#6E7160' }}>Per Family</span>
-              <span style={{ fontWeight: 600, color: '#16180F' }}>{allocation.portion_per_family} {donation.unit}</span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '10px 0'
-            }}>
-              <span style={{ color: '#6E7160' }}>Families Served</span>
-              <span style={{ fontWeight: 600, color: '#16180F' }}>{allocation.total_families}</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -320,12 +404,14 @@ function QRGeneration() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '1rem'
       }}>
-        <div>
-          <div style={{ fontSize: '0.75rem', color: '#6E7160', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Distribution ID
+        {allocation && (
+          <div>
+            <div style={{ fontSize: '0.75rem', color: '#6E7160', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Distribution ID
+            </div>
+            <div style={{ fontWeight: 600, color: '#16180F' }}>{allocation.id.slice(0, 12)}...</div>
           </div>
-          <div style={{ fontWeight: 600, color: '#16180F' }}>{allocation.id.slice(0, 12)}...</div>
-        </div>
+        )}
         <div>
           <div style={{ fontSize: '0.75rem', color: '#6E7160', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Pickup Location
@@ -337,6 +423,69 @@ function QRGeneration() {
             Pickup Time
           </div>
           <div style={{ fontWeight: 600, color: '#16180F' }}>2:00 PM - 5:00 PM</div>
+        </div>
+      </div>
+
+      {/* Beneficiary QR Codes */}
+      <div className="no-print" style={{
+        marginTop: '2rem',
+        background: '#FFFFFF',
+        borderRadius: '16px',
+        border: '1px solid #E7E3D4',
+        padding: '1.5rem'
+      }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem', fontWeight: 700, color: '#16180F' }}>
+          Beneficiary QR Codes ({beneficiaries.length})
+        </h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+          gap: '1rem'
+        }}>
+          {beneficiaries.map((beneficiary) => {
+            const isSelected = selected?.id === beneficiary.id;
+            return (
+              <Link
+                key={beneficiary.id}
+                to={`/qr?code=${encodeURIComponent(beneficiary.qr_code)}`}
+                style={{
+                  background: isSelected ? '#E8F5E9' : '#FAF7EE',
+                  padding: '0.75rem',
+                  borderRadius: '10px',
+                  border: `1.5px solid ${isSelected ? '#2E7D32' : '#E7E3D4'}`,
+                  textAlign: 'center',
+                  textDecoration: 'none'
+                }}
+              >
+                <QRCodeImage
+                  value={beneficiary.qr_code}
+                  size={60}
+                  alt={`QR for ${beneficiary.family_name}`}
+                  style={{ margin: '0 auto', borderRadius: '4px' }}
+                />
+                <div style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#16180F',
+                  marginTop: '4px'
+                }}>
+                  {beneficiary.family_name}
+                </div>
+                <code style={{
+                  fontSize: '0.65rem',
+                  color: '#6E7160',
+                  fontFamily: '"Space Mono", monospace',
+                  background: '#FFFFFF',
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  display: 'inline-block',
+                  marginTop: '2px'
+                }}>
+                  {beneficiary.qr_code}
+                </code>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

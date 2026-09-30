@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { useAuth } from '../context/authcontext';
+import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
   const [donations, setDonations] = useState([]);
@@ -22,33 +22,22 @@ function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      setupDonorAndFetch();
+      ensureDonorExists(user).then(fetchDashboardData);
     }
   }, [user]);
 
-  async function setupDonorAndFetch() {
-    await ensureDonorExists();
-    await fetchDashboardData();
-  }
+  async function ensureDonorExists(currentUser) {
+    // INSERT ... ON CONFLICT DO NOTHING: safe when called more than once at the same time
+    const { error } = await supabase
+      .from('donors')
+      .upsert({
+        id: currentUser.id,
+        name: currentUser.email?.split('@')[0] || 'Donor',
+        email: currentUser.email,
+        address: 'Barangay Pasig'
+      }, { onConflict: 'id', ignoreDuplicates: true });
 
-  async function ensureDonorExists() {
-    if (!user) return;
-    try {
-      const { data: existingDonor, error: checkError } = await supabase
-        .from('donors')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (!existingDonor) {
-        await supabase.from('donors').insert({
-          id: user.id,
-          name: user.email?.split('@')[0] || 'Donor',
-          email: user.email,
-          address: 'Barangay Pasig'
-        });
-      }
-    } catch (error) {
+    if (error) {
       console.error('Error in ensureDonorExists:', error);
     }
   }
@@ -64,7 +53,9 @@ function Dashboard() {
       `)
       .order('created_at', { ascending: false });
 
-    if (!donationsError) {
+    if (donationsError) {
+      console.error('Error fetching donations:', donationsError);
+    } else {
       setDonations(donationsData || []);
       
       const totalDonated = donationsData?.reduce((sum, d) => sum + d.quantity, 0) || 0;
@@ -98,20 +89,7 @@ function Dashboard() {
     setFormMessage('');
 
     try {
-      const { data: donorCheck } = await supabase
-        .from('donors')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (!donorCheck) {
-        await supabase.from('donors').insert({
-          id: user.id,
-          name: user.email?.split('@')[0] || 'Donor',
-          email: user.email,
-          address: 'Barangay Pasig'
-        });
-      }
+      await ensureDonorExists(user);
 
       const { error } = await supabase
         .from('donations')
@@ -199,9 +177,10 @@ function Dashboard() {
           borderRadius: '999px',
           fontSize: '0.8rem',
           fontWeight: 600,
-          border: '1px solid #E7E3D4'
+          border: '1px solid #E7E3D4',
+          textTransform: 'capitalize'
         }}>
-          {role === 'admin' ? 'Admin' : 'Donor'}
+          {role}
         </span>
       </div>
 

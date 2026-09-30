@@ -16,7 +16,7 @@ function Navbar() {
   const visibleLinks = allLinks.filter(link => link.roles.includes(role));
 
   return (
-    <nav style={{
+    <nav className="no-print" style={{
       background: '#FFFFFF',
       borderBottom: '1px solid #E7E3D4',
       padding: '0.75rem 2rem',
