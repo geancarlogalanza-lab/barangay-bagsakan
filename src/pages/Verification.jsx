@@ -46,7 +46,10 @@ function Verification() {
   }
 
   async function verifyBeneficiary() {
-    if (!qrInput.trim()) {
+    // Generated codes are upper-case (BEN-XXXXXXXX); accept any casing typed by staff
+    const code = qrInput.trim().toUpperCase();
+
+    if (!code) {
       setMessage('Please enter a QR code.');
       return;
     }
@@ -63,32 +66,39 @@ function Verification() {
       const { data, error } = await supabase
         .from('beneficiaries')
         .select('*')
-        .eq('qr_code', qrInput.trim())
-        .single();
+        .eq('qr_code', code)
+        .maybeSingle();
 
       if (error) {
-        setMessage(`Beneficiary not found. QR code "${qrInput.trim()}" does not exist.`);
+        console.error('Error looking up beneficiary:', error);
+        setMessage('Could not check the QR code right now. Please try again.');
         setBeneficiary(null);
         setLoading(false);
         return;
       }
 
       if (!data) {
-        setMessage('No beneficiary found with this QR code.');
+        setMessage(`Beneficiary not found. QR code "${code}" does not exist.`);
         setBeneficiary(null);
         setLoading(false);
         return;
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      // Start of today in the barangay's local time (not UTC midnight)
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
       const { data: claims, error: claimsError } = await supabase
         .from('transactions')
         .select('*')
         .eq('beneficiary_id', data.id)
-        .gte('claimed_at', today);
+        .gte('claimed_at', startOfToday.toISOString());
 
       if (claimsError) {
         console.error('Error checking claims:', claimsError);
+        setMessage('Could not check previous claims. Please try again.');
+        setBeneficiary(null);
+        setLoading(false);
+        return;
       }
 
       if (claims && claims.length > 0) {
@@ -246,7 +256,7 @@ function Verification() {
             type="text"
             value={qrInput}
             onChange={(e) => setQrInput(e.target.value)}
-            placeholder="Type QR code (e.g., BEN-001)"
+            placeholder="Type QR code (e.g., BEN-1A2B3C4D)"
             onKeyDown={(e) => e.key === 'Enter' && verifyBeneficiary()}
             disabled={!hasAllocation}
             style={{

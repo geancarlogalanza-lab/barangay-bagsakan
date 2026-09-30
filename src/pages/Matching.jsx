@@ -21,7 +21,10 @@ function Matching() {
       .eq('status', 'available')
       .order('expiry_hours', { ascending: true });
 
-    if (!inventoryError) {
+    if (inventoryError) {
+      console.error('Error fetching inventory:', inventoryError);
+      setMessage('Could not load available donations from the database.');
+    } else {
       setInventory(inventoryData || []);
     }
 
@@ -29,7 +32,10 @@ function Matching() {
       .from('beneficiaries')
       .select('*', { count: 'exact', head: true });
 
-    if (!countError) {
+    if (countError) {
+      console.error('Error counting beneficiaries:', countError);
+      setMessage('Could not load registered families from the database.');
+    } else {
       setFamiliesCount(count || 0);
     }
 
@@ -71,6 +77,7 @@ function Matching() {
           });
 
         if (insertError) {
+          console.error(`Error creating allocation for donation ${donation.id}:`, insertError);
           errorCount++;
           continue;
         }
@@ -81,6 +88,7 @@ function Matching() {
           .eq('id', donation.id);
 
         if (updateError) {
+          console.error(`Error marking donation ${donation.id} as claimed:`, updateError);
           errorCount++;
           continue;
         }

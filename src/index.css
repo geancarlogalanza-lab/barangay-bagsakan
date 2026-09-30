@@ -29,6 +29,17 @@ body {
   }
 }
 
+/* Printing (e.g. a beneficiary's QR code): hide navigation and controls */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #FFFFFF;
+  }
+}
+
 /* ============================================
    NAVBAR
    ============================================ */

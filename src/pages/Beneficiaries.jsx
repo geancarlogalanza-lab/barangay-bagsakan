@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import QRCodeImage from '../components/QRCodeImage';
 
 function Beneficiaries() {
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(null);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     fetchBeneficiaries();
@@ -19,6 +22,7 @@ function Beneficiaries() {
 
     if (error) {
       console.error('Error fetching beneficiaries:', error);
+      setMessage('Could not load beneficiaries from the database.');
     } else {
       setBeneficiaries(data || []);
     }
@@ -28,6 +32,7 @@ function Beneficiaries() {
 
   async function generateQRCode(id) {
     setGenerating(id);
+    setMessage('');
 
     const beneficiary = beneficiaries.find(b => b.id === id);
 
@@ -37,27 +42,35 @@ function Beneficiaries() {
       return;
     }
 
-    let qrCode = beneficiary.qr_code;
+    const shortId = String(id).replace(/-/g, '').toUpperCase();
+    let qrCode = beneficiary.qr_code || `BEN-${shortId.slice(0, 8)}`;
 
-    if (!qrCode) {
-      qrCode = `BEN-${String(id).slice(0, 8).toUpperCase()}`;
+    let { error } = await saveQRCode(id, qrCode);
+
+    // qr_code is UNIQUE; on the rare 8-character collision, use a longer code
+    if (error?.code === '23505' && !beneficiary.qr_code) {
+      qrCode = `BEN-${shortId.slice(0, 12)}`;
+      ({ error } = await saveQRCode(id, qrCode));
     }
 
-    const { error } = await supabase
+    if (error) {
+      console.error('Error updating QR status:', error);
+      setMessage(`Failed to generate QR code for ${beneficiary.family_name}: ${error.message}`);
+    } else {
+      await fetchBeneficiaries();
+    }
+
+    setGenerating(null);
+  }
+
+  function saveQRCode(id, qrCode) {
+    return supabase
       .from('beneficiaries')
       .update({
         qr_code: qrCode,
         qr_printed: true
       })
       .eq('id', id);
-
-    if (error) {
-      console.error('Error updating QR status:', error);
-    } else {
-      await fetchBeneficiaries();
-    }
-
-    setGenerating(null);
   }
 
   if (loading) {
@@ -154,6 +167,20 @@ function Beneficiaries() {
           </span>
         </div>
       </div>
+
+      {message && (
+        <div style={{
+          marginBottom: '1rem',
+          padding: '12px 16px',
+          borderRadius: '10px',
+          background: '#FFEBEE',
+          color: '#C62828',
+          border: '1px solid #FFCDD2',
+          fontSize: '0.9rem'
+        }}>
+          {message}
+        </div>
+      )}
 
       {/* Table */}
       <div style={{
@@ -349,7 +376,9 @@ function Beneficiaries() {
                   {/* QR Code */}
                   <td style={{ padding: '14px 20px' }}>
                     {beneficiary.qr_printed && beneficiary.qr_code ? (
-                      <div
+                      <Link
+                        to={`/qr?code=${encodeURIComponent(beneficiary.qr_code)}`}
+                        title={`View QR code ${beneficiary.qr_code}`}
                         style={{
                           display: 'inline-block',
                           padding: '4px',
@@ -365,17 +394,13 @@ function Beneficiaries() {
                           e.currentTarget.style.transform = 'scale(1)';
                         }}
                       >
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${beneficiary.qr_code}`}
+                        <QRCodeImage
+                          value={beneficiary.qr_code}
+                          size={50}
                           alt={`QR Code for ${beneficiary.family_name}`}
-                          style={{
-                            width: '50px',
-                            height: '50px',
-                            display: 'block',
-                            borderRadius: '4px'
-                          }}
+                          style={{ borderRadius: '4px' }}
                         />
-                      </div>
+                      </Link>
                     ) : (
                       <span style={{
                         color: '#6E7160',
@@ -420,13 +445,17 @@ function Beneficiaries() {
                           : 'Generate QR'}
                       </button>
                     ) : (
-                      <span style={{
-                        color: '#2E7D32',
-                        fontWeight: 600,
-                        fontSize: '0.85rem'
-                      }}>
-                        ✓ Done
-                      </span>
+                      <Link
+                        to={`/qr?code=${encodeURIComponent(beneficiary.qr_code || '')}`}
+                        style={{
+                          color: '#2E7D32',
+                          fontWeight: 600,
+                          fontSize: '0.85rem',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        ✓ View / Print
+                      </Link>
                     )}
                   </td>
 
