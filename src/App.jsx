@@ -1,15 +1,17 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/authcontext';
+import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Navbar from './components/Navbar';
+import AppLayout from './components/AppLayout';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Beneficiaries from './pages/Beneficiaries';
-import Matching from './pages/Matching';
-import QRGeneration from './pages/QRGeneration';
-import Verification from './pages/Verification';
+import Donations from './pages/Donations';
+import NewDonation from './pages/NewDonation';
+import DonationDetail from './pages/DonationDetail';
+import Reports from './pages/Reports';
+import Users from './pages/Users';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -19,61 +21,26 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['admin', 'donor', 'volunteer']}>
-              <>
-                <Navbar />
-                <div className="app-container">
-                  <Dashboard />
-                </div>
-              </>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/beneficiaries" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <>
-                <Navbar />
-                <div className="app-container">
-                  <Beneficiaries />
-                </div>
-              </>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/matching" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <>
-                <Navbar />
-                <div className="app-container">
-                  <Matching />
-                </div>
-              </>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/qr" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <>
-                <Navbar />
-                <div className="app-container">
-                  <QRGeneration />
-                </div>
-              </>
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/verify" element={
-            <ProtectedRoute allowedRoles={['admin', 'volunteer']}>
-              <>
-                <Navbar />
-                <div className="app-container">
-                  <Verification />
-                </div>
-              </>
-            </ProtectedRoute>
-          } />
+
+          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/donations" element={<Donations />} />
+            <Route
+              path="/donations/new"
+              element={<ProtectedRoute allowedRoles={['donor']}><NewDonation /></ProtectedRoute>}
+            />
+            <Route path="/donations/:id" element={<DonationDetail />} />
+            <Route
+              path="/reports"
+              element={<ProtectedRoute allowedRoles={['admin']}><Reports /></ProtectedRoute>}
+            />
+            <Route
+              path="/users"
+              element={<ProtectedRoute allowedRoles={['admin']}><Users /></ProtectedRoute>}
+            />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </HashRouter>

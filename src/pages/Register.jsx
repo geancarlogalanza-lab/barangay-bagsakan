@@ -1,303 +1,238 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authcontext';
-import { supabase } from '../services/supabase';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import AuthShell from '../components/AuthShell';
+import Field from '../components/Field';
+import Alert from '../components/Alert';
+import ErrorSummary from '../components/ErrorSummary';
+import PasswordInput from '../components/PasswordInput';
+import { friendlyError } from '../lib/api';
+import * as validate from '../lib/validation';
+
+const ACCOUNT_TYPES = [
+  { value: 'donor', title: 'Donor', text: 'I have surplus food to give: a household, store, restaurant or vendor.' },
+  { value: 'admin', title: 'Admin', text: 'I work for the barangay and review and track donations.' },
+];
+
+const EMPTY_FORM = {
+  role: 'donor',
+  fullName: '',
+  email: '',
+  contactNumber: '',
+  organization: '',
+  password: '',
+  confirmPassword: '',
+  agreed: false,
+};
+
+function validateForm(form) {
+  return validate.collectErrors({
+    role: () => validate.role(form.role),
+    fullName: () => validate.fullName(form.fullName),
+    email: () => validate.email(form.email),
+    contactNumber: () => validate.contactNumber(form.contactNumber),
+    organization: () => validate.organization(form.organization),
+    password: () => validate.password(form.password),
+    confirmPassword: () => validate.confirmPassword(form.confirmPassword, form.password),
+    agreed: () => validate.agreement(form.agreed),
+  });
+}
 
 function Register() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { user, loading: authLoading, signUp } = useAuth();
   const navigate = useNavigate();
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [submitError, setSubmitError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+
+  if (!authLoading && user && !submitting) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  function update(field, value) {
+    const next = { ...form, [field]: value };
+    setForm(next);
+    // After the first submit attempt, re-check as the user fixes things
+    if (submitted) setErrors(validateForm(next));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
-
-    if (!email || !password) {
-      setError('Please fill in all fields.');
+    setSubmitted(true);
+    const found = validateForm(form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      setFailedAttempts((n) => n + 1);
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
+    setSubmitting(true);
+    setSubmitError('');
+    const { data, error } = await signUp({
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+      fullName: form.fullName.trim().replace(/\s+/g, ' '),
+      role: form.role,
+      contactNumber: validate.normalizeMobile(form.contactNumber),
+      organization: form.organization.trim(),
+    });
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    const { data, error } = await signUp(email, password);
-    
     if (error) {
-      setError(error.message);
-      setLoading(false);
+      setSubmitError(friendlyError(error));
+      setSubmitting(false);
       return;
     }
 
-    if (data?.user) {
-      try {
-        const { error: donorError } = await supabase
-          .from('donors')
-          .insert({
-            id: data.user.id,
-            name: email.split('@')[0] || 'Donor',
-            email: email,
-            address: 'Barangay Pasig'
-          });
-
-        if (donorError) {
-          console.error('Error creating donor:', donorError);
-        } else {
-          console.log('Donor profile created for:', email);
-        }
-      } catch (err) {
-        console.error('Error in donor creation:', err);
-      }
+    if (data.session) {
+      navigate('/dashboard', { replace: true });
+    } else {
+      // Email confirmation is switched on in Supabase
+      setNeedsConfirmation(true);
+      setSubmitting(false);
     }
-    
-    navigate('/login');
-    setLoading(false);
+  }
+
+  const errorCount = Object.keys(errors).length;
+  const aside = (
+    <ul className="auth__points">
+      <li><strong>Donors</strong> report surplus food and follow it until it reaches a family.</li>
+      <li><strong>Admins</strong> review each donation and record what happened to it.</li>
+    </ul>
+  );
+
+  if (needsConfirmation) {
+    return (
+      <AuthShell title="Check your email" aside={aside}>
+        <Alert tone="success" title="Account created">
+          We sent a confirmation link to <strong>{form.email}</strong>. Open it, then sign in.
+        </Alert>
+        <Link to="/login" className="button button--primary button--block">Go to sign in</Link>
+      </AuthShell>
+    );
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#FAF7EE',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem'
-    }}>
-      <div style={{
-        background: '#FFFFFF',
-        padding: '2.5rem',
-        borderRadius: '20px',
-        maxWidth: '420px',
-        width: '100%',
-        boxShadow: '0 20px 60px rgba(20,20,10,0.08)',
-        border: '1px solid #E7E3D4'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-          <div style={{
-            display: 'inline-block',
-            background: '#24391F',
-            color: '#E8B44E',
-            padding: '4px 16px',
-            borderRadius: '999px',
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase'
-          }}>
-            Barangay Bagsakan
-          </div>
+    <AuthShell
+      title="Create an account"
+      description="It takes a minute. Fields are required unless marked optional."
+      aside={aside}
+    >
+      {submitted && errorCount > 0 && <ErrorSummary count={errorCount} attempt={failedAttempts} />}
+      {submitError && <Alert tone="error" title="Account not created">{submitError}</Alert>}
+
+      <form className="form" onSubmit={handleSubmit} noValidate>
+        <fieldset className="choice-list choice-list--row">
+          <legend className="field__label">I am registering as</legend>
+          {ACCOUNT_TYPES.map((type) => (
+            <label key={type.value} className={`choice ${form.role === type.value ? 'choice--selected' : ''}`}>
+              <input
+                type="radio"
+                name="role"
+                value={type.value}
+                checked={form.role === type.value}
+                onChange={() => update('role', type.value)}
+              />
+              <span className="choice__body">
+                <span className="choice__title">{type.title}</span>
+                <span className="choice__hint">{type.text}</span>
+              </span>
+            </label>
+          ))}
+          {errors.role && <p className="field__error">{errors.role}</p>}
+        </fieldset>
+
+        <Field label="Full name" error={errors.fullName}>
+          <input
+            type="text"
+            autoComplete="name"
+            maxLength={100}
+            value={form.fullName}
+            onChange={(e) => update('fullName', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Email" error={errors.email}>
+          <input
+            type="email"
+            autoComplete="email"
+            maxLength={254}
+            value={form.email}
+            onChange={(e) => update('email', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Mobile number" hint="11 digits, like 09171234567" error={errors.contactNumber}>
+          <input
+            type="tel"
+            autoComplete="tel"
+            inputMode="tel"
+            maxLength={16}
+            value={form.contactNumber}
+            onChange={(e) => update('contactNumber', e.target.value)}
+          />
+        </Field>
+
+        <Field
+          label={form.role === 'admin' ? 'Office or position' : 'Organization or business'}
+          optional
+          hint={form.role === 'admin' ? 'For example, Barangay Health Office' : 'For example, Aling Nena’s Carinderia'}
+          error={errors.organization}
+        >
+          <input
+            type="text"
+            autoComplete="organization"
+            maxLength={100}
+            value={form.organization}
+            onChange={(e) => update('organization', e.target.value)}
+          />
+        </Field>
+
+        <div className="form-row">
+          <Field label="Password" hint="At least 8 characters, with a letter and a number" error={errors.password}>
+            <PasswordInput
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(e) => update('password', e.target.value)}
+            />
+          </Field>
+          <Field label="Confirm password" error={errors.confirmPassword}>
+            <PasswordInput
+              autoComplete="new-password"
+              value={form.confirmPassword}
+              onChange={(e) => update('confirmPassword', e.target.value)}
+            />
+          </Field>
         </div>
-        <h2 style={{
-          textAlign: 'center',
-          marginBottom: '0.25rem',
-          color: '#16180F',
-          fontSize: '1.6rem',
-          fontWeight: 800,
-          letterSpacing: '-0.02em'
-        }}>
-          Create Account
-        </h2>
-        <p style={{
-          textAlign: 'center',
-          color: '#6E7160',
-          marginBottom: '1.75rem',
-          fontSize: '0.92rem'
-        }}>
-          Register as a donor
-        </p>
 
-        {error && (
-          <div style={{
-            background: '#FFEBEE',
-            color: '#C62828',
-            padding: '12px 16px',
-            borderRadius: '10px',
-            marginBottom: '1.25rem',
-            fontSize: '0.9rem',
-            border: '1px solid #FFCDD2'
-          }}>
-            {error}
-          </div>
-        )}
+        <div className={`checkbox ${errors.agreed ? 'checkbox--error' : ''}`}>
+          <input
+            id="agree"
+            type="checkbox"
+            checked={form.agreed}
+            onChange={(e) => update('agreed', e.target.checked)}
+            aria-invalid={errors.agreed ? true : undefined}
+            aria-describedby={errors.agreed ? 'agree-error' : undefined}
+          />
+          <label htmlFor="agree">
+            I agree that Barangay Bagsakan may store my name, email and mobile number to
+            coordinate donations, as allowed by the Data Privacy Act of 2012.
+          </label>
+        </div>
+        {errors.agreed && <p className="field__error" id="agree-error">{errors.agreed}</p>}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.35rem',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              color: '#3C3E30'
-            }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1.5px solid #E7E3D4',
-                borderRadius: '10px',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                transition: 'border-color 0.15s ease',
-                background: '#FAFAF8'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#24391F';
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.outline = 'none';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#E7E3D4';
-                e.currentTarget.style.background = '#FAFAF8';
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.35rem',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              color: '#3C3E30'
-            }}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1.5px solid #E7E3D4',
-                borderRadius: '10px',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                transition: 'border-color 0.15s ease',
-                background: '#FAFAF8'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#24391F';
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.outline = 'none';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#E7E3D4';
-                e.currentTarget.style.background = '#FAFAF8';
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '0.35rem',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              color: '#3C3E30'
-            }}>
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              required
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '1.5px solid #E7E3D4',
-                borderRadius: '10px',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                transition: 'border-color 0.15s ease',
-                background: '#FAFAF8'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#24391F';
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.outline = 'none';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#E7E3D4';
-                e.currentTarget.style.background = '#FAFAF8';
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: '#24391F',
-              color: '#E8B44E',
-              border: 'none',
-              borderRadius: '999px',
-              fontSize: '1rem',
-              fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-              transition: 'all 0.15s ease',
-              fontFamily: 'inherit'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background = '#345A2C';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#24391F';
-            }}
-          >
-            {loading ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
+        <button type="submit" className="button button--primary button--block" disabled={submitting}>
+          {submitting ? 'Creating account…' : 'Create account'}
+        </button>
+      </form>
 
-        <p style={{
-          textAlign: 'center',
-          fontSize: '0.9rem',
-          color: '#6E7160',
-          marginTop: '1.25rem'
-        }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{
-            color: '#24391F',
-            fontWeight: 700,
-            textDecoration: 'none',
-            transition: 'color 0.15s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#345A2C';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = '#24391F';
-          }}>
-            Sign In
-          </Link>
-        </p>
-      </div>
-    </div>
+      <p className="auth__switch">
+        Already registered? <Link to="/login">Sign in</Link>
+      </p>
+    </AuthShell>
   );
 }
 
