@@ -3,51 +3,25 @@ import { supabase } from '../services/supabase';
 
 const AuthContext = createContext();
 
-const ADMIN_EMAILS = [
-  'geancarlo.galanza@benilde.edu.ph',
-  'alexmtuazon2006@gmail.com',
-  'maynardvincent.arrardaza@benilde.edu.ph'
-];
+async function fetchProfile(userId) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, role, full_name, contact_number, organization')
+    .eq('id', userId)
+    .maybeSingle();
 
-async function fetchUserRole(userId, email) {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data?.role) {
-      return data.role;
-    }
-
-    // No profile row yet: admins listed above get admin access; everyone else
-    // is a donor. RLS only lets users create their own row as a donor, so admin
-    // and volunteer rows are assigned in the database.
-    if (ADMIN_EMAILS.includes(email)) {
-      return 'admin';
-    }
-
-    const { error: insertError } = await supabase
-      .from('users')
-      .insert([{ id: userId, email, role: 'donor' }]);
-
-    if (insertError) {
-      console.error('Error creating user:', insertError);
-    }
-
-    return 'donor';
-  } catch (err) {
-    console.error('Error in fetchUserRole:', err);
-    return 'donor';
+  if (error) {
+    console.error('Error loading profile:', error);
   }
+
+  // Profiles are created by a database trigger at sign-up; fall back to a
+  // donor view if the row is missing so the app still opens.
+  return data || { id: userId, role: 'donor', full_name: null };
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [roleState, setRoleState] = useState({ userId: null, role: null });
+  const [profileState, setProfileState] = useState({ userId: null, profile: null });
   const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
@@ -57,7 +31,7 @@ export function AuthProvider({ children }) {
     });
 
     // Keep this callback synchronous: awaiting other Supabase calls inside
-    // onAuthStateChange can deadlock the auth client. The role is loaded below.
+    // onAuthStateChange can deadlock the auth client. The profile loads below.
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setSessionChecked(true);
@@ -67,51 +41,55 @@ export function AuthProvider({ children }) {
   }, []);
 
   const userId = user?.id;
-  const userEmail = user?.email;
 
   useEffect(() => {
     if (!userId) return;
 
     let cancelled = false;
-    fetchUserRole(userId, userEmail).then((fetchedRole) => {
-      if (!cancelled) setRoleState({ userId, role: fetchedRole });
+    fetchProfile(userId).then((profile) => {
+      if (!cancelled) setProfileState({ userId, profile });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [userId, userEmail]);
+  }, [userId]);
 
-  // Only trust a role fetched for the current user.
-  const role = userId && roleState.userId === userId ? roleState.role : null;
+  // Only trust a profile fetched for the current user
+  const profile = userId && profileState.userId === userId ? profileState.profile : null;
+  const role = profile?.role ?? null;
 
   // Stay in the loading state until the role is known, so role-protected pages
-  // are not redirected away while the role is still being fetched.
-  const loading = !sessionChecked || (!!user && role === null);
+  // are not redirected away while the profile is still being fetched.
+  const loading = !sessionChecked || (!!user && !profile);
 
-  async function signUp(email, password) {
-    const { data, error } = await supabase.auth.signUp({
+  async function signUp({ email, password, fullName, role: chosenRole, contactNumber, organization }) {
+    return supabase.auth.signUp({
       email,
       password,
+      options: {
+        // Read by the handle_new_user trigger to create the profile rows
+        data: {
+          full_name: fullName,
+          role: chosenRole,
+          contact_number: contactNumber,
+          organization: organization || null,
+        },
+      },
     });
-    return { data, error };
   }
 
   async function signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
+    return supabase.auth.signInWithPassword({ email, password });
   }
 
   async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    return supabase.auth.signOut();
   }
 
   const value = {
     user,
+    profile,
     role,
     loading,
     signUp,
@@ -119,7 +97,6 @@ export function AuthProvider({ children }) {
     signOut,
     isAdmin: role === 'admin',
     isDonor: role === 'donor',
-    isVolunteer: role === 'volunteer',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
